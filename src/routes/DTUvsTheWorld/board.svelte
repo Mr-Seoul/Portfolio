@@ -11,30 +11,94 @@
         turn: 1
     } );
 
+    let highlight = $state({
+        state: []
+    })
+    
+    function getHightlight(input) {
+        return highlight.state[inputToIndex(input)];
+    }
+
+    function resetHightlight() {
+        highlight.state = [];
+        for (let i = 0; i < 64; i++) {
+            highlight.state.push(false);
+        }
+    }
+
+    function mapHighlight(arr) {
+        resetHightlight();
+        for (let i = 0; i < arr.length; i++) {
+            highlight.state[XYToIndex(arr[i])] = true;
+        }
+    }
+
     let boardFlipped = $state(true);
     let pageLoaded = $state(false);
 
     let boardObject;
 
+    function getTile(input) {
+        return board.state[inputToIndex(input)];
+    }
+
+    function setTile(input,value) {
+        board.state[inputToIndex(input)] = value;
+    }
+
+    function getSide() {
+        return board.side;
+    }
+
+    function changeSide() {
+        board.side = board.side == 1 ? 2 : 1;
+    }
+
+    function incrementTurn() {
+        if (board.side == 1) {
+                board.turn += 1;
+        }
+    }
+
     function movePiece (XYTo, XYFrom) {
-            board.moves.push(XYtoChess(selectedPosition,tilePosition));
+            board.moves.push(XYToChess(selectedPosition,tilePosition));
             
             //if en passent also remove piece above:
             //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
-            let dir = getColour(XYToIndex(XYFrom)) == 1 ? -1 : 1;
-            if (board.state[XYToIndex(XYFrom)].toLowerCase() == "p" && board.state[XYToIndex(XYTo)].toLowerCase() == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
-                board.state[XYToIndex({x:XYTo.x,y:XYTo.y + dir})] = "";
+            let dir = getColour(XYFrom) == 1 ? -1 : 1;
+            if (getTile(XYFrom).toLowerCase() == "p" && getTile(XYTo).toLowerCase() == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
+                setTile({x:XYTo.x,y:XYTo.y + dir}, "");
             }
-            board.state[XYTo.x + XYTo.y*8] = board.state[XYFrom.x + XYFrom.y*8];
-            board.state[XYToIndex(XYFrom)] = "";
+            setTile(XYTo,getTile(XYFrom));
+            setTile(XYFrom,"");
 
-            board.side = board.side == 1 ? 2 : 1;
-            if (board.side == 1) {
-                board.turn += 1;
-            }
+            changeSide();
+            incrementTurn();
     }
 
-    function getColour(index) {
+    function inputToIndex(input) {
+        let index = -1;
+        if (typeof(input) === "number" || typeof(input) === "string") {
+            index = input;
+        } else if (typeof(input) === "object") {
+            index = XYToIndex(input);
+        }
+        return index;
+    }
+
+    function inputToXY(input) {
+        let XY = {x:-1,y:-1};
+        if (typeof(input) === "number" || typeof(input) === "string") {
+            XY = indexToXY(input);
+        } else if (typeof(input) === "object") {
+            XY = input;
+        }
+        return XY;
+    }
+
+    function getColour(input) {
+            let index = inputToIndex(input);
+
             if (index < 0 || index > 63) {
                 return -1;
             }
@@ -55,7 +119,7 @@
         return XY.x +XY.y*8
     }
 
-    function XYtoChess(XYFrom, XYTo) {
+    function XYToChess(XYFrom, XYTo) {
         function XYToFile(XY) {
             let result = "";
             switch(XY.x) {
@@ -86,22 +150,22 @@
             }
             return result;
         }
-        let pieceLetter = board.state[XYToIndex(XYFrom)].toLowerCase() == "p" ? "" : board.state[XYToIndex(XYFrom)].toUpperCase();
+        let pieceLetter = getTile(XYFrom).toLowerCase() == "p" ? "" : getTile(XYFrom).toUpperCase();
         let toFile = XYToFile(XYTo);
-        let fromFile = board.state[XYToIndex(XYFrom)].toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
-        let captureLetter = board.state[XYToIndex(XYTo)] == "" ? "" : "x";
+        let fromFile = getTile(XYFrom).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
+        let captureLetter = getTile(XYTo) == "" ? "" : "x";
         //En passent logic
-        if (board.state[XYToIndex(XYFrom)].toLowerCase() == "p") {
-            let Col = getColour(XYToIndex(XYFrom));
+        if (getTile(XYFrom).toLowerCase() == "p") {
+            let Col = getColour(XYFrom);
             let dir = Col == 1 ? -1 : 1;
-            if (board.state[XYToIndex({x:XYTo.x,y:XYTo.y + dir})].toLowerCase() == "p" && board.state[XYToIndex({x: XYTo.x, y: XYTo.y + dir})] != board.state[XYToIndex(XYFrom)]) {
+            if (getTile({x:XYTo.x,y:XYTo.y + dir}).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir}) != getTile(XYFrom)) {
                 captureLetter = "x";
             }
         }
         return pieceLetter + fromFile + captureLetter + toFile + (XYTo.y+1);
     }
     
-    function ChesstoXY(Chess) {
+    function ChessToXY(Chess) {
         let XY = {x:-1,y:-1}
         switch(Chess[Chess.length-2]) {
             case "a":
@@ -146,8 +210,10 @@
         board.moves = [];
     }
 
-    function getLegalMoves(index) {
-        if (! inBoard(indexToXY(index))) { 
+    function getLegalMoves(input) {
+        let index = inputToIndex(input);
+
+        if (! inBoard(index)) { 
             return [];  //Return empty array if square is off the board
         }
         if (board.state[index] == "") {
@@ -159,15 +225,25 @@
         let pos = {x:X,y:Y};
         let Col = getColour(index);
 
-        function differentColour(obj1,obj2) {
-            return (getColour(XYToIndex(obj1)) != getColour(XYToIndex(obj2)));
+        function differentColour(input1,input2) {
+            let obj1 = inputToXY(input1);
+            let obj2 = inputToXY(input2);
+            return (getColour(obj1)) != getColour(obj2);
         }
 
-        function inBoard(obj1) {
+        function inBoard(input) {
+            let obj1 = inputToXY(input);
+
             return (obj1.x > -1 && obj1.y > -1 && obj1.x < 8 && obj1.y < 8);
         }
 
-        function addLegalMove(obj1) {
+        function isOpponent(input) {
+            let obj1 = inputToXY(input);
+            return getColour(obj1) == (Col == 1 ? 2 : 1);
+        }
+
+        function addLegalMove(input) {
+            let obj1 = inputToXY(input);
             if (inBoard(obj1) && isEmptyorOpponent(obj1)) {legalMoves.push(obj1);}
         }
 
@@ -179,15 +255,17 @@
             }
         }
 
-        function enPassent(obj1) {
-            let lastMove = board.moves.length != 0 ? ChesstoXY(board.moves[board.moves.length-1]) : {x:-1,y:-1};
+        function enPassent(input) {
+            let obj1 = inputToXY(input);
+
+            let lastMove = board.moves.length != 0 ? ChessToXY(board.moves[board.moves.length-1]) : {x:-1,y:-1};
             //Check if target square is refering to the last move
             if (obj1.x != lastMove.x || obj1.y != lastMove.y + (Col == 1? 1: -1)) {
                 return false;
             }
             //See if this is the firstTime the target pawn has moved
             for (let i = Col == 1? 0 : 1; i < board.moves.length; i += 2) {
-                if (board.moves[i] == XYtoChess({x:lastMove.x, y:lastMove.y},obj1)) {
+                if (board.moves[i] == XYToChess({x:lastMove.x, y:lastMove.y},obj1)) {
                     return false;
                 }
             }
@@ -203,91 +281,106 @@
             return false;
         }
 
-        function isEmpty(obj1) {
-            return (board.state[XYToIndex(obj1)] == "");
+        function isEmpty(input) {
+            let obj1 = inputToXY(input);
+
+            return (getTile(obj1) == "");
         }
 
-        function isEmptyorOpponent(obj1) {
+        function isEmptyorOpponent(input) {
+            let obj1 = inputToXY(input);
             return (isEmpty(obj1) || differentColour(pos,obj1));
         }
 
-        //Pawns
-        if (board.state[index].toLowerCase() == "p") {
-            let direction = (Col == 1? 1 : -1);
-            if (isEmpty({x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {
-                addLegalMove({x:X+1,y:Y+direction});
+        function checkDirection(input1, dir) {
+            let startSquare = inputToXY(input1);
+            let currentSquare = {x:startSquare.x,y:startSquare.y};
+            currentSquare.x += dir.x;
+            currentSquare.y += dir.y;
+            while (inBoard(currentSquare) && isEmpty(currentSquare)) {
+                addLegalMove({x:currentSquare.x,y:currentSquare.y});
+                currentSquare.x += dir.x;
+                currentSquare.y += dir.y;
             }
-            if (isEmpty({x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
-                addLegalMove({x:X-1,y:Y+direction});
-            }
-            if (isEmpty({x:X,y:Y+direction*2}) && firstMove()) {
-                addLegalMove({x:X,y:Y+direction*2});
-            }
-            if (isEmpty({x:X,y:Y+direction})) {
-                addLegalMove({x:X,y:Y+direction});
-            }
-            if (X>0) {
-                if (! isEmpty({x:X-1,y:Y+direction*1})) {
-                    addLegalMove({x:X-1,y:Y+direction*1});
-                }
-            }
-            if (X<7) {
-                if (! isEmpty({x:X+1,y:Y+direction*1})) {
-                    addLegalMove({x:X+1,y:Y+direction*1});
-                }
-            }
-        }
-        //Knights
-        if (board.state[index].toLowerCase() == "n") {
-            let moveSway = [-1,1];
-            for (let i = 0; i < 2; i++) {
-                for (let j = 0; j < 2; j++) {
-                    addLegalMove({x:X+moveSway[i]*1,y:Y+moveSway[j]*2});
-                    addLegalMove({x:X+moveSway[i]*2,y:Y+moveSway[j]*1});
-                }
-            }
-        }
-        //Bishops
-        if (board.state[index].toLowerCase() == "b") {
-            for (let i = 1; i < 8; i++) {
-                addLegalMove({x:X+i,y:Y+i});
-                addLegalMove({x:X+i,y:Y-i});
-                addLegalMove({x:X-i,y:Y+i});
-                addLegalMove({x:X-i,y:Y-i});
-            }
-        }
-        //Rook code
-        if (board.state[index].toLowerCase() == "r") {
-            for (let i = 0; i < 8; i++) {
-                if (i != X) {
-                    addLegalMove({x:i,y:Y});
-                }
-                if (i != Y) {
-                    addLegalMove({x:X,y:i});
-                }
+            if (inBoard(currentSquare) && isOpponent(currentSquare)) {
+                addLegalMove({x:currentSquare.x,y:currentSquare.y});
             }
         }
 
-        //Queen code
-        if (board.state[index].toLowerCase() == "q") {
-            for (let m = 1; m < 8; m++) {
-                let moveSway = [-1,0,1];
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        addLegalMove({x:X+m*moveSway[i],y:Y+m*moveSway[j]});
+        switch(getTile(index).toLowerCase()) {
+            //Pawns
+            case "p":
+                let direction = (Col == 1? 1 : -1);
+                if (isEmpty({x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {
+                    addLegalMove({x:X+1,y:Y+direction});
+                }
+                if (isEmpty({x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
+                    addLegalMove({x:X-1,y:Y+direction});
+                }
+                if (isEmpty({x:X,y:Y+direction*2}) && firstMove()) {
+                    addLegalMove({x:X,y:Y+direction*2});
+                }
+                if (isEmpty({x:X,y:Y+direction})) {
+                    addLegalMove({x:X,y:Y+direction});
+                }
+                if (X>0) {
+                    if (! isEmpty({x:X-1,y:Y+direction*1})) {
+                        addLegalMove({x:X-1,y:Y+direction*1});
                     }
                 }
-            }
-        }
-
-        //King code
-        if (board.state[index].toLowerCase() == "k") {
-            let moveSway = [-1,0,1];
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    addLegalMove({x:X+moveSway[i],y:Y+moveSway[j]});
+                if (X<7) {
+                    if (! isEmpty({x:X+1,y:Y+direction*1})) {
+                        addLegalMove({x:X+1,y:Y+direction*1});
+                    }
                 }
-            }
+                break;
+            
+            //Knights
+            case "n": 
+                let moveSwayN = [-1,1];
+                for (let i = 0; i < 2; i++) {
+                    for (let j = 0; j < 2; j++) {
+                        addLegalMove({x:X+moveSwayN[i]*1,y:Y+moveSwayN[j]*2});
+                        addLegalMove({x:X+moveSwayN[i]*2,y:Y+moveSwayN[j]*1});
+                    }
+                }
+                break;
+        
+            //Bishops
+            case "b":
+                checkDirection({x:X,y:Y},{x:1,y:1});
+                checkDirection({x:X,y:Y},{x:1,y:-1});
+                checkDirection({x:X,y:Y},{x:-1,y:1});
+                checkDirection({x:X,y:Y},{x:-1,y:-1});
+                break;
+            
+            //Rook code
+            case "r":
+                checkDirection({x:X,y:Y},{x:1,y:0});
+                checkDirection({x:X,y:Y},{x:-1,y:0});
+                checkDirection({x:X,y:Y},{x:0,y:1});
+                checkDirection({x:X,y:Y},{x:0,y:-1});
+                break;
+
+            //Queen code
+            case "q":
+                let moveSwayQ = [-1,0,1];
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        checkDirection({x:X,y:Y},{x:moveSwayQ[i],y:moveSwayQ[j]});
+                    }
+                }
+                break;
+
+            //King code
+            case "k":
+                let moveSwayK = [-1,0,1];
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        addLegalMove({x:X+moveSwayK[i],y:Y+moveSwayK[j]});
+                    }
+                }
+                break;
         }
         return legalMoves;
     }
@@ -323,19 +416,22 @@
 	}
 
     function onmousedown() {
-        if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(XYToIndex(tilePosition)) == board.side){
-            if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(XYToIndex(selectedPosition)) == getColour(XYToIndex(tilePosition))) {
+        if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition) == board.side){
+            if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition) == getColour(tilePosition)) {
                 selectedPosition = tilePosition;
+                mapHighlight(getLegalMoves(selectedPosition));
             }
         }
     }
 
     function onmouseup() {
-        if (tilePosition != selectedPosition && getColour(XYToIndex(selectedPosition)) != getColour(XYToIndex(tilePosition)) && getLegalMoves(XYToIndex(selectedPosition)).some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(XYToIndex(selectedPosition)) == board.side) {
+        if (tilePosition != selectedPosition && getColour(selectedPosition) != getColour(tilePosition) && getLegalMoves(selectedPosition).some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition) == getSide()) {
             movePiece(tilePosition,selectedPosition);
             selectedPosition = {x:-1,y:-1};
-        } else if (board.state[XYToIndex(tilePosition)] == "") {
+            resetHightlight();
+        } else if (getTile(tilePosition) == "") {
             selectedPosition = {x:-1,y:-1};
+            resetHightlight();
         }
     }
 
@@ -348,8 +444,8 @@
     <div {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
         {#each board.state as row, index}
             {@const reverseIndex = board.state.length - index - 1}
-            {#if boardFlipped} <Tile index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
-            {#if ! boardFlipped} <Tile index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
+            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
+            {#if ! boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
         {/each}
         <div style="display:flex; width:480px">
             <p in:fly= {{x:100, duration:2000, opacity:0}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p>
@@ -370,8 +466,8 @@
 
 <style>
     p {
-        background: lightgray; 
-        margin:5px;
+        background: lightgray;
+        padding: 5px;
         border-radius: 5px; 
         box-shadow: 5px 5px 2px rgb(0,0,0,0.25);
     }

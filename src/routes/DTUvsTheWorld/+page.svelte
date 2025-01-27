@@ -5,15 +5,14 @@
     let pageLoaded = $state(false);
 
     onMount(() => {
-    pageLoaded = true;
-});
+        pageLoaded = true;
+    });
 </script>
 
 <main>
     <h1 style="text-align: center; margin-bottom: auto;">DTU versus the world</h1><p style="text-align: center; margin-top: auto; margin-bottom: auto; color: dimgray">By Mark van Damme</p>
-
-    <!-- 8x8 board for chess -->
     {#if pageLoaded}
+    <!-- 8x8 board for chess -->
         <div class="container">
             <ProjectForm></ProjectForm>
             <Board></Board>
