@@ -46,11 +46,11 @@
 </script>
 
 {#if pageLoaded}
-    <div id ="{index}" draggable={false} on:dragstart={e => e.preventDefault()}  in:fly= {{x:sideSwipe.x,y:sideSwipe.y, duration:750, opacity:0, delay:delay}} style="background: {color};">
+    <div role="region" id ="{index}" draggable={false} ondragstart={e => e.preventDefault()}  in:fly= {{x:sideSwipe.x,y:sideSwipe.y, duration:750, opacity:0, delay:delay}} style="background: {color};">
         {#if highlighted}
-            <img id="highlightDot" src="assets/DTUvsTheWorld/Dot.png">
+            <img alt="" id="highlightDot" src="assets/DTUvsTheWorld/Dot.png">
         {/if}    
-        <img id={piece} src={src}>
+        <img alt="" id={piece} src={src}>
     </div>
 {/if}
 

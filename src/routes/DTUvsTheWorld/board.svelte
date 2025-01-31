@@ -441,7 +441,7 @@
 </script>
 
 <div style="display:grid;grid-template-columns: auto auto; gap:20px;">
-    <div {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
+    <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
         {#each board.state as row, index}
             {@const reverseIndex = board.state.length - index - 1}
             {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}

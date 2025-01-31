@@ -3,6 +3,8 @@
     import {fly} from "svelte/transition";
     import { onMount } from "svelte";
 
+    document.title = "Portfolio";
+
     let formState = $state({
         answers: {},
         step: 0,

@@ -2,6 +2,9 @@
 	import { onMount } from "svelte";
     import Board from "./board.svelte"
 	import ProjectForm from "./projectForm.svelte";
+
+    document.title = "DTU vs the World";
+
     let pageLoaded = $state(false);
 
     onMount(() => {
