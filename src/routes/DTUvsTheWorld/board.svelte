@@ -2,6 +2,7 @@
     import {fly,fade} from "svelte/transition";
     import Tile from "./tile.svelte";
     import { onMount } from "svelte";
+	import { cubicOut } from "svelte/easing";
 
     let board = $state({
         //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
@@ -38,42 +39,42 @@
 
     let boardObject;
 
-    function getTile(input) {
-        return board.state[inputToIndex(input)];
+    function getTile(input,currentBoard) {
+        return currentBoard.state[inputToIndex(input)];
     }
 
-    function setTile(input,value) {
-        board.state[inputToIndex(input)] = value;
+    function setTile(input,value,currentBoard) {
+        currentBoard.state[inputToIndex(input)] = value;
     }
 
-    function getSide() {
-        return board.side;
+    function getSide(currentBoard) {
+        return currentBoard.side;
     }
 
-    function changeSide() {
-        board.side = board.side == 1 ? 2 : 1;
+    function changeSide(currentBoard) {
+        currentBoard.side = currentBoard.side == 1 ? 2 : 1;
     }
 
-    function incrementTurn() {
-        if (board.side == 1) {
-                board.turn += 1;
+    function incrementTurn(currentBoard) {
+        if (currentBoard.side == 1) {
+                currentBoard.turn += 1;
         }
     }
 
-    function movePiece (XYTo, XYFrom) {
-            board.moves.push(XYToChess(selectedPosition,tilePosition));
+    function movePiece (XYFrom, XYTo,currentBoard) {
+            currentBoard.moves.push(XYToChess(XYFrom,XYTo,currentBoard));
             
             //if en passent also remove piece above:
             //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
-            let dir = getColour(XYFrom) == 1 ? -1 : 1;
-            if (getTile(XYFrom).toLowerCase() == "p" && getTile(XYTo).toLowerCase() == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
-                setTile({x:XYTo.x,y:XYTo.y + dir}, "");
+            let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
+            if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard).toLowerCase() == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
+                setTile({x:XYTo.x,y:XYTo.y + dir}, "",currentBoard);
             }
-            setTile(XYTo,getTile(XYFrom));
-            setTile(XYFrom,"");
+            setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
+            setTile(XYFrom,"",currentBoard);
 
-            changeSide();
-            incrementTurn();
+            changeSide(currentBoard);
+            incrementTurn(currentBoard);
     }
 
     function inputToIndex(input) {
@@ -96,17 +97,16 @@
         return XY;
     }
 
-    function getColour(input) {
+    function getColour(input,currentBoard) {
             let index = inputToIndex(input);
-
             if (index < 0 || index > 63) {
                 return -1;
             }
-            if (board.state[index] === "") {
+            if (currentBoard.state[index] === "") {
                 return 0;
-            } else if (board.state[index] === board.state[index].toUpperCase()) {
+            } else if (currentBoard.state[index] === currentBoard.state[index].toUpperCase()) {
                 return 1;
-            } else if (board.state[index] === board.state[index].toLowerCase()) {
+            } else if (currentBoard.state[index] === currentBoard.state[index].toLowerCase()) {
                 return 2;
             }
         }
@@ -119,7 +119,15 @@
         return XY.x +XY.y*8
     }
 
-    function XYToChess(XYFrom, XYTo) {
+    function XYToChess(input1, input2,currentBoard) {
+        let XYFrom = inputToXY(input1);
+        let XYTo = inputToXY(input2);
+        if (XYFrom.x < 0 || XYFrom.x > 7 || XYFrom.y < 0 || XYFrom.y > 7) {
+                return "";
+            }
+        if (XYTo.x < 0 || XYTo.x > 7 || XYTo.y < 0 || XYTo.y > 7) {
+                return "";
+            }
         function XYToFile(XY) {
             let result = "";
             switch(XY.x) {
@@ -150,15 +158,16 @@
             }
             return result;
         }
-        let pieceLetter = getTile(XYFrom).toLowerCase() == "p" ? "" : getTile(XYFrom).toUpperCase();
+        console.log(getTile(XYFrom,currentBoard),JSON.stringify(XYFrom),getTile(XYTo,currentBoard),JSON.stringify(XYTo))
+        let pieceLetter = getTile(XYFrom,currentBoard).toLowerCase() == "p" ? "" : getTile(XYFrom,currentBoard).toUpperCase();
         let toFile = XYToFile(XYTo);
-        let fromFile = getTile(XYFrom).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
-        let captureLetter = getTile(XYTo) == "" ? "" : "x";
+        let fromFile = getTile(XYFrom,currentBoard).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
+        let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
         //En passent logic
-        if (getTile(XYFrom).toLowerCase() == "p") {
-            let Col = getColour(XYFrom);
+        if (getTile(XYFrom,currentBoard).toLowerCase() == "p") {
+            let Col = getColour(XYFrom,currentBoard);
             let dir = Col == 1 ? -1 : 1;
-            if (getTile({x:XYTo.x,y:XYTo.y + dir}).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir}) != getTile(XYFrom)) {
+            if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
                 captureLetter = "x";
             }
         }
@@ -210,25 +219,25 @@
         board.moves = [];
     }
 
-    function getLegalMoves(input) {
+    function getLegalMoves(input,currentBoard,checkForCheck) {
         let index = inputToIndex(input);
 
         if (! inBoard(index)) { 
             return [];  //Return empty array if square is off the board
         }
-        if (board.state[index] == "") {
+        if (currentBoard.state[index] == "") {
             return []; //Return empty array if the square is empty
         }
         let legalMoves = [];
         let X = index%8;
         let Y = Math.floor(index/8);
         let pos = {x:X,y:Y};
-        let Col = getColour(index);
+        let Col = getColour(index,currentBoard);
 
         function differentColour(input1,input2) {
             let obj1 = inputToXY(input1);
             let obj2 = inputToXY(input2);
-            return (getColour(obj1)) != getColour(obj2);
+            return (getColour(obj1,currentBoard)) != getColour(obj2,currentBoard);
         }
 
         function inBoard(input) {
@@ -239,12 +248,44 @@
 
         function isOpponent(input) {
             let obj1 = inputToXY(input);
-            return getColour(obj1) == (Col == 1 ? 2 : 1);
+            return getColour(obj1,currentBoard) == (Col == 1 ? 2 : 1);
+        }
+
+        function notInCheck(input) {
+            if (!checkForCheck) {
+                return true;
+            }
+            let inCheck = false;
+            let obj1 = inputToXY(input);
+            let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+            console.log("Before", obj1)
+            console.log(hypotheticalBoard);
+            //Move own piece
+            movePiece(selectedPosition, obj1, hypotheticalBoard);
+            console.log(hypotheticalBoard);
+            console.log("After")
+
+            //Now check if any other piece can capture our king
+            const isKing = (element) => element == (Col==1? "K":"k");
+            let kingPos = indexToXY(hypotheticalBoard.state.findIndex(isKing));
+            for (let i = 0; i < 64; i++) {
+                //Only check for opposing colours
+                if (getColour(i,hypotheticalBoard) != Col) {
+                    //Check every move the opponent can make
+                    getLegalMoves(i, hypotheticalBoard,false).forEach((element)=>{
+                        if (element.x == kingPos.x && element.y == kingPos.y) {
+                            inCheck = true;
+                        }
+                    });
+                }
+            }
+
+            return !inCheck;
         }
 
         function addLegalMove(input) {
             let obj1 = inputToXY(input);
-            if (inBoard(obj1) && isEmptyorOpponent(obj1)) {legalMoves.push(obj1);}
+            if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {legalMoves.push(obj1);}
         }
 
         function firstMove() {
@@ -258,14 +299,14 @@
         function enPassent(input) {
             let obj1 = inputToXY(input);
 
-            let lastMove = board.moves.length != 0 ? ChessToXY(board.moves[board.moves.length-1]) : {x:-1,y:-1};
+            let lastMove = currentBoard.moves.length != 0 ? ChessToXY(currentBoard.moves[currentBoard.moves.length-1]) : {x:-1,y:-1};
             //Check if target square is refering to the last move
             if (obj1.x != lastMove.x || obj1.y != lastMove.y + (Col == 1? 1: -1)) {
                 return false;
             }
             //See if this is the firstTime the target pawn has moved
-            for (let i = Col == 1? 0 : 1; i < board.moves.length; i += 2) {
-                if (board.moves[i] == XYToChess({x:lastMove.x, y:lastMove.y},obj1)) {
+            for (let i = Col == 1? 0 : 1; i < currentBoard.moves.length; i += 2) {
+                if (currentBoard.moves[i] == XYToChess({x:lastMove.x, y:lastMove.y},obj1,currentBoard)) {
                     return false;
                 }
             }
@@ -283,8 +324,9 @@
 
         function isEmpty(input) {
             let obj1 = inputToXY(input);
+            
 
-            return (getTile(obj1) == "");
+            return (getTile(obj1,currentBoard) == "");
         }
 
         function isEmptyorOpponent(input) {
@@ -307,7 +349,7 @@
             }
         }
 
-        switch(getTile(index).toLowerCase()) {
+        switch(getTile(index,currentBoard).toLowerCase()) {
             //Pawns
             case "p":
                 let direction = (Col == 1? 1 : -1);
@@ -317,7 +359,7 @@
                 if (isEmpty({x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
                     addLegalMove({x:X-1,y:Y+direction});
                 }
-                if (isEmpty({x:X,y:Y+direction*2}) && firstMove()) {
+                if (isEmpty({x:X,y:Y+direction*2},currentBoard) && firstMove()) {
                     addLegalMove({x:X,y:Y+direction*2});
                 }
                 if (isEmpty({x:X,y:Y+direction})) {
@@ -325,7 +367,7 @@
                 }
                 if (X>0) {
                     if (! isEmpty({x:X-1,y:Y+direction*1})) {
-                        addLegalMove({x:X-1,y:Y+direction*1});
+                        addLegalMove({x:X-1,y:Y+direction*1},currentBoard);
                     }
                 }
                 if (X<7) {
@@ -395,6 +437,7 @@
     let boardPosition = $state({x:0, y:0});
     let tilePosition = $state({x:0, y:0});
     let selectedPosition = $state({x:-1,y:-1});
+    let previousSelectedPosition = $state({x:-1,y:-1});
 
     function getBoardPosition() {
         if (boardObject) {
@@ -416,20 +459,22 @@
 	}
 
     function onmousedown() {
-        if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition) == board.side){
-            if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition) == getColour(tilePosition)) {
+        console.log("-------------------");
+        if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
+            if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
                 selectedPosition = tilePosition;
-                mapHighlight(getLegalMoves(selectedPosition));
+                mapHighlight(getLegalMoves(selectedPosition,board,true));
             }
         }
     }
 
     function onmouseup() {
-        if (tilePosition != selectedPosition && getColour(selectedPosition) != getColour(tilePosition) && getLegalMoves(selectedPosition).some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition) == getSide()) {
-            movePiece(tilePosition,selectedPosition);
+        if (tilePosition != selectedPosition && getColour(selectedPosition,board) != getColour(tilePosition,board) && getLegalMoves(selectedPosition,board,true).some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition,board) == getSide(board)) {
+            movePiece(selectedPosition,tilePosition,board);
+            previousSelectedPosition = selectedPosition;
             selectedPosition = {x:-1,y:-1};
             resetHightlight();
-        } else if (getTile(tilePosition) == "") {
+        } else if (getTile(tilePosition,board) == "") {
             selectedPosition = {x:-1,y:-1};
             resetHightlight();
         }
@@ -444,7 +489,7 @@
     <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
         {#each board.state as row, index}
             {@const reverseIndex = board.state.length - index - 1}
-            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
+            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
             {#if ! boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
         {/each}
         <div style="display:flex; width:480px">
