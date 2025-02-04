@@ -4,9 +4,9 @@
 </script>
 
 <nav>
-    <button><a href="/">Home</a></button>
-    <button><a href="/DTUvsTheWorld">DTUvsTheWorld</a></button>
-    <button style="margin-left: auto;"><a href="/About">About</a></button>
+    <a href="/"><button>Home</button></a>
+    <a href="/DTUvsTheWorld"><button>DTUvsTheWorld</button></a>
+    <a href="/About" style="margin-left: auto;"><button>About</button></a>
 </nav>
 
 {@render children()}

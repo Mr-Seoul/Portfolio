@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
     import {fly} from "svelte/transition";
     import {resetPiece} from "$lib/DTUvsTheWorld";
+	import Page from "../+page.svelte";
 
     let {
         time = 200,
@@ -39,13 +40,14 @@
 
     onMount(() => {
         delay = Math.floor(Math.random() * 500);
-        pageLoaded = true;
         src = resetPiece(piece);
+        pageLoaded = true;
     })
 
     $effect(()=>{
         src = resetPiece(piece);
         hasPiece = false;
+        //Reloads tile, allowing for piece animation.
         setTimeout(() => {
             hasPiece = true;
         }, 0);
@@ -61,7 +63,6 @@
         {#if hasPiece} 
             <img alt="" in:fly={{x:(x-prevTile.x)*60, y:(y-prevTile.y)*60, duration:250, opacity:100}} id={piece} src={src}>
         {/if}</div>
-        
     </div>
 {/if}
 

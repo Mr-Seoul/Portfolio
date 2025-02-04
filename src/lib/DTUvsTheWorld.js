@@ -1,4 +1,4 @@
-export const resetPiece = (piece: string) => {
+export const resetPiece = (piece) => {
     let src = "";
     switch(piece) {
                 case "":

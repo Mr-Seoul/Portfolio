@@ -2,7 +2,6 @@
     import {fly,fade} from "svelte/transition";
     import Tile from "./tile.svelte";
     import { onMount } from "svelte";
-	import { cubicOut } from "svelte/easing";
 
     let board = $state({
         //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
@@ -35,7 +34,7 @@
     }
 
     let boardFlipped = $state(true);
-    let pageLoaded = $state(false);
+    let pageLoaded = $state(true);
 
     let boardObject;
 
@@ -61,7 +60,7 @@
         }
     }
 
-    function movePiece (XYFrom, XYTo,currentBoard) {
+    function movePiece(XYFrom, XYTo,currentBoard) {
             currentBoard.moves.push(XYToChess(XYFrom,XYTo,currentBoard));
             
             //if en passent also remove piece above:
@@ -158,7 +157,6 @@
             }
             return result;
         }
-        console.log(getTile(XYFrom,currentBoard),JSON.stringify(XYFrom),getTile(XYTo,currentBoard),JSON.stringify(XYTo))
         let pieceLetter = getTile(XYFrom,currentBoard).toLowerCase() == "p" ? "" : getTile(XYFrom,currentBoard).toUpperCase();
         let toFile = XYToFile(XYTo);
         let fromFile = getTile(XYFrom,currentBoard).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
@@ -206,9 +204,9 @@
         return XY;
     }
 
-    function resetBoard() {
-        board.state = [];
-        board.state.push("R","N","B", "K", "Q", "B", "N", "R",
+    function resetBoard(currentBoard) {
+        currentBoard.state = [];
+        currentBoard.state.push("R","N","B", "K", "Q", "B", "N", "R",
                      "P","P","P", "P", "P", "P", "P", "P",
                      "","","", "", "", "", "", "",
                      "","","", "", "", "", "", "",
@@ -216,7 +214,7 @@
                      "","","", "", "", "", "", "",
                      "p","p","p", "p", "p", "p", "p", "p",
                      "r","n","b", "k", "q", "b", "n", "r");
-        board.moves = [];
+        currentBoard.moves = [];
     }
 
     function getLegalMoves(input,currentBoard,checkForCheck) {
@@ -258,12 +256,8 @@
             let inCheck = false;
             let obj1 = inputToXY(input);
             let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-            console.log("Before", obj1)
-            console.log(hypotheticalBoard);
             //Move own piece
             movePiece(selectedPosition, obj1, hypotheticalBoard);
-            console.log(hypotheticalBoard);
-            console.log("After")
 
             //Now check if any other piece can capture our king
             const isKing = (element) => element == (Col==1? "K":"k");
@@ -428,8 +422,7 @@
     }
 
     onMount(() => {
-        pageLoaded = true;
-        resetBoard();
+        resetBoard(board);
     });
 
     let absoluteMousePosition = $state({x: 0, y: 0});
@@ -459,7 +452,6 @@
 	}
 
     function onmousedown() {
-        console.log("-------------------");
         if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
             if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
                 selectedPosition = tilePosition;
@@ -497,7 +489,7 @@
             <button in:fly={{x:-25, duration:2000, opacity:0}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
         </div>
     </div>
-    <div style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
+    <div in:fade= {{duration:200}} style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
         <h2 style="text-align: center;">Moves</h2>
         {#each {length: 10} as _,index}
             {#if board.moves.length > 2*index  + 1}

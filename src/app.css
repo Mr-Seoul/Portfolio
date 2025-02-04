@@ -1,10 +1,21 @@
 a {
     text-decoration: none;
     color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 h1 {
     text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+p {
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 button {

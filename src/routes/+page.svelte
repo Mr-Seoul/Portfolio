@@ -3,8 +3,6 @@
     import {fly} from "svelte/transition";
     import { onMount } from "svelte";
 
-    document.title = "Portfolio";
-
     let formState = $state({
         answers: {},
         step: 0,
@@ -39,6 +37,7 @@
     }
     //effect runs whenever any value mentioned in it updates
     onMount (() => {
+        document.title = "Portfolio";
         console.log("on mount");
         console.log(formState.step)
         return () => {
