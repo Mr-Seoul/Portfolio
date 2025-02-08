@@ -30,13 +30,16 @@
         resetHightlight();
         for (let i = 0; i < arr.length; i++) {
             highlight.state[XYToIndex(arr[i])] = true;
-        }
+        }        
     }
 
     let boardFlipped = $state(true);
     let pageLoaded = $state(true);
 
     let boardObject;
+
+
+    let gameResult = $state();
 
     function getTile(input,currentBoard) {
         return currentBoard.state[inputToIndex(input)];
@@ -204,6 +207,24 @@
         return XY;
     }
 
+    function inCheck(currentBoard, Col) {
+        let Checked = false;
+        const isKing = (element) => element == (Col==1? "K":"k");
+        const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
+        for (let i = 0; i < 64; i++) {
+            //Only check for opposing colours
+            if (getColour(i,currentBoard) != Col) {
+                //Check every move the opponent can make
+                getLegalMoves(i, currentBoard,false).forEach((element)=>{
+                    if (element.x == kingPos.x && element.y == kingPos.y) {
+                        Checked = true;
+                    }
+                });
+            }
+        }
+        return Checked;
+    }
+    
     function resetBoard(currentBoard) {
         currentBoard.state = [];
         currentBoard.state.push("R","N","B", "K", "Q", "B", "N", "R",
@@ -215,6 +236,27 @@
                      "p","p","p", "p", "p", "p", "p", "p",
                      "r","n","b", "k", "q", "b", "n", "r");
         currentBoard.moves = [];
+        currentBoard.side = 1;
+        currentBoard.turn = 1;
+        previousSelectedPosition = {x:-1,y:-1};
+        selectedPosition = {x:-1,y:-1};
+    }
+
+    let allLegalMoves = {};
+
+    function setAllLegalMoves(currentBoard) {
+        allLegalMoves = {};
+        for (let i = 0; i < 64; i++) {
+            if (getSide(currentBoard) == getColour(i,currentBoard)) {
+                allLegalMoves[JSON.stringify(i)] = getLegalMoves(i,currentBoard,true);
+            }
+        }
+    }
+
+    function getNumLegalMoves() {
+        let sum = 0;
+        Object.values(allLegalMoves).forEach((element) => {sum+=element.length});
+        return sum;
     }
 
     function getLegalMoves(input,currentBoard,checkForCheck) {
@@ -253,28 +295,12 @@
             if (!checkForCheck) {
                 return true;
             }
-            let inCheck = false;
             let obj1 = inputToXY(input);
             let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
             //Move own piece
-            movePiece(selectedPosition, obj1, hypotheticalBoard);
+            movePiece(pos, obj1, hypotheticalBoard);
 
-            //Now check if any other piece can capture our king
-            const isKing = (element) => element == (Col==1? "K":"k");
-            let kingPos = indexToXY(hypotheticalBoard.state.findIndex(isKing));
-            for (let i = 0; i < 64; i++) {
-                //Only check for opposing colours
-                if (getColour(i,hypotheticalBoard) != Col) {
-                    //Check every move the opponent can make
-                    getLegalMoves(i, hypotheticalBoard,false).forEach((element)=>{
-                        if (element.x == kingPos.x && element.y == kingPos.y) {
-                            inCheck = true;
-                        }
-                    });
-                }
-            }
-
-            return !inCheck;
+            return !inCheck(hypotheticalBoard,Col);
         }
 
         function addLegalMove(input) {
@@ -422,7 +448,12 @@
     }
 
     onMount(() => {
-        resetBoard(board);
+        try {
+            resetBoard(board);
+            setAllLegalMoves(board);
+        } catch (error) {
+            console.error("Error in onMount:", error);
+        }
     });
 
     let absoluteMousePosition = $state({x: 0, y: 0});
@@ -455,17 +486,29 @@
         if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
             if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
                 selectedPosition = tilePosition;
-                mapHighlight(getLegalMoves(selectedPosition,board,true));
+                mapHighlight(allLegalMoves[JSON.stringify(XYToIndex(tilePosition))]);
             }
         }
     }
 
     function onmouseup() {
-        if (tilePosition != selectedPosition && getColour(selectedPosition,board) != getColour(tilePosition,board) && getLegalMoves(selectedPosition,board,true).some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition,board) == getSide(board)) {
+        if (tilePosition != selectedPosition && getColour(selectedPosition,board) != getColour(tilePosition,board) && allLegalMoves[JSON.stringify(XYToIndex(selectedPosition))] && allLegalMoves[JSON.stringify(XYToIndex(selectedPosition))].some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition,board) == getSide(board)) {
             movePiece(selectedPosition,tilePosition,board);
+            setAllLegalMoves(board);
             previousSelectedPosition = selectedPosition;
             selectedPosition = {x:-1,y:-1};
             resetHightlight();
+
+            if (getNumLegalMoves() == 0) {
+                if (inCheck(board,getSide(board))) {
+                    gameResult = getSide(board) == 1 ? 2 : 1;
+                    board.moves.push(getSide(board) == 1 ? "0-1" : "1-0");
+                } else {
+                    gameResult = 0.5;
+                    board.moves.push("0.5-0.5");
+                }
+            }
+
         } else if (getTile(tilePosition,board) == "") {
             selectedPosition = {x:-1,y:-1};
             resetHightlight();
@@ -475,40 +518,62 @@
     function onmouseleave() {
         selectedPosition = {x:-1, y:-1};
     }
+
+    function gameMessage() {
+        if (gameResult == 1) {
+            return "White Wins" 
+        } else if (gameResult == 2) {
+            return "Black Wins" 
+        } if (gameResult == 0.5) {
+            return "Draw" 
+        } else {
+            return "Error"
+        }
+    }
 </script>
 
 <div style="display:grid;grid-template-columns: auto auto; gap:20px;">
     <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
-        {#each board.state as row, index}
-            {@const reverseIndex = board.state.length - index - 1}
-            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
-            {#if ! boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
-        {/each}
-        <div style="display:flex; width:480px">
-            <p in:fly= {{x:100, duration:2000, opacity:0}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p>
+        <div style="display:grid;grid-template-columns: 1fr; grid-template-rows: auto auto; width:480px;height:480px;">
+            {#if gameResult}
+                <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex">
+                    <div style="padding:25px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25);">
+                        <p>{gameMessage()}</p>
+                        <button onclick={() => {resetBoard(board);gameResult = null;}}>Play Again</button>
+                    </div>
+                    
+                </div>
+            {/if}
+            <div style="width: 480px; height: 480px;grid-column: 1 / -1;grid-row: 1 / -1;z-index: 1;">
+                <div style="display:grid;grid-template-columns: repeat(8, 1fr);grid-template-rows: repeat(8, 1fr)">
+                    {#each board.state as row, index}
+                        {@const reverseIndex = board.state.length - index - 1}
+                        {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
+                        {#if !boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
+                    {/each}
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 20px; width: 480px;">
+            <p style=" background: lightgray;padding: 5px;border-radius: 5px; box-shadow: 5px 5px 2px rgb(0,0,0,0.25);" in:fly= {{x:100, duration:2000, opacity:0}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p>
             <button in:fly={{x:-25, duration:2000, opacity:0}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
         </div>
     </div>
     <div in:fade= {{duration:200}} style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
         <h2 style="text-align: center;">Moves</h2>
-        {#each {length: 10} as _,index}
-            {#if board.moves.length > 2*index  + 1}
-                <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} {board.moves[index*2+1]} </p>
-            {:else if board.moves.length >= 2*index + 1}
-                <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} </p>
-            {/if}
-        {/each}
+        <div style="overflow-y: scroll;height:63vh;">
+            {#each board.moves as _,index}
+                {#if board.moves.length > 2*index  + 1}
+                    <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} {board.moves[index*2+1]} </p>
+                {:else if board.moves.length >= 2*index + 1}
+                    <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} </p>
+                {/if}
+            {/each}
+        </div>
     </div>
 </div>
 
 <style>
-    p {
-        background: lightgray;
-        padding: 5px;
-        border-radius: 5px; 
-        box-shadow: 5px 5px 2px rgb(0,0,0,0.25);
-    }
-
     button {
         align-self: center;
         background: lightgray;

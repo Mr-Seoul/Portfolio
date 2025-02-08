@@ -52,7 +52,12 @@
             hasPiece = true;
         }, 0);
     })
-
+    function animationDistance() {
+        if (prevTile.x == -1 && prevTile.y == -1) {
+            return {x:0,y:0}
+        }
+        return {x:(x-prevTile.x)*60, y:(y-prevTile.y)*60}
+    }
 </script>
 
 {#if pageLoaded}
@@ -61,7 +66,7 @@
             <img alt="" id="highlightDot" src="assets/DTUvsTheWorld/Dot.png">
         {/if} 
         {#if hasPiece} 
-            <img alt="" in:fly={{x:(x-prevTile.x)*60, y:(y-prevTile.y)*60, duration:250, opacity:100}} id={piece} src={src}>
+            <img alt="" in:fly={{x:animationDistance().x, y:animationDistance().y, duration:150, opacity:100}} id={piece} src={src}>
         {/if}</div>
     </div>
 {/if}
@@ -69,6 +74,8 @@
 <style>
     div {
         display: grid;
+        width: 60px;
+        height: 60px;
         opacity: 100%;
         transition: opacity 0.2s;
     }
