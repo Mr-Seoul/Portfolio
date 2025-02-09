@@ -305,7 +305,7 @@
 
         function addLegalMove(input) {
             let obj1 = inputToXY(input);
-            if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {legalMoves.push(obj1);}
+            if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {legalMoves.push(obj1);if (!checkForCheck&&getTile(obj1,currentBoard).toLowerCase() == "k") {return legalMoves};}
         }
 
         function firstMove() {
@@ -545,7 +545,7 @@
                     <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
                         <div style="padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
                             <p>{gameMessage()}</p>
-                            <button onclick={() => {resetBoard(board);gameResult = null;}}>Play Again</button>
+                            <button onclick={() => {resetBoard(board);gameResult = null;setAllLegalMoves(board);}}>Play Again</button>
                         </div>
                         
                     </div>
@@ -563,9 +563,9 @@
             <div style="display: flex; gap: 20px; width: 480px;text-align: right;justify-content: space-between;">
                 <div><p style=" background: lightgray;padding: 5px;border-radius: 5px; box-shadow: 5px 5px 2px rgb(0,0,0,0.25);" in:fly= {{x:100, duration:2000, opacity:0,delay:2000}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p></div>
                 <div style="display:flex;"><button in:fly={{x:-25, duration:2000, opacity:0,delay:2000}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
-                <button key={board.turn} style="background-color: {board.turn >= 2 ? 'lightgray' : 'dimgray'}" 
+                <button key={board.turn} style="background-color: {board.turn >= 40 ? 'lightgray' : 'dimgray'}" 
                     in:fly={{x:-25, duration:2000, opacity:0, delay:2000}} 
-                    onclick={() => {if (board.turn >= 2) {board.moves.push("0.5-0.5"); gameResult = 0.5;}}}>
+                    onclick={() => {if (board.turn >= 40) {board.moves.push("0.5-0.5"); gameResult = 0.5;}}}>
                 Offer Draw</button></div>
             </div>
         </div>
