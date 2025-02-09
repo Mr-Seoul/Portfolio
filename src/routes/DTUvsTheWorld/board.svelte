@@ -34,9 +34,9 @@
     }
 
     let boardFlipped = $state(true);
-    let pageLoaded = $state(true);
+    let pageLoaded = $state(false);
 
-    let boardObject;
+    let boardObject = $state();
 
 
     let gameResult = $state();
@@ -451,9 +451,11 @@
         try {
             resetBoard(board);
             setAllLegalMoves(board);
+            
         } catch (error) {
             console.error("Error in onMount:", error);
         }
+        pageLoaded = true;
     });
 
     let absoluteMousePosition = $state({x: 0, y: 0});
@@ -483,10 +485,12 @@
 	}
 
     function onmousedown() {
-        if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
-            if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
-                selectedPosition = tilePosition;
-                mapHighlight(allLegalMoves[JSON.stringify(XYToIndex(tilePosition))]);
+        if (!gameResult) {
+            if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
+                if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
+                    selectedPosition = tilePosition;
+                    mapHighlight(allLegalMoves[JSON.stringify(XYToIndex(tilePosition))]);
+                }
             }
         }
     }
@@ -507,6 +511,7 @@
                     gameResult = 0.5;
                     board.moves.push("0.5-0.5");
                 }
+                resetHightlight();
             }
 
         } else if (getTile(tilePosition,board) == "") {
@@ -533,44 +538,50 @@
 </script>
 
 <div style="display:grid;grid-template-columns: auto auto; gap:20px;">
-    <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
-        <div style="display:grid;grid-template-columns: 1fr; grid-template-rows: auto auto; width:480px;height:480px;">
-            {#if gameResult}
-                <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex">
-                    <div style="padding:25px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25);">
-                        <p>{gameMessage()}</p>
-                        <button onclick={() => {resetBoard(board);gameResult = null;}}>Play Again</button>
+    {#if pageLoaded}
+        <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
+            <div style="display:grid;grid-template-columns: 1fr; grid-template-rows: auto auto; width:480px;height:480px;">
+                {#if gameResult}
+                    <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
+                        <div style="padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
+                            <p>{gameMessage()}</p>
+                            <button onclick={() => {resetBoard(board);gameResult = null;}}>Play Again</button>
+                        </div>
+                        
                     </div>
-                    
-                </div>
-            {/if}
-            <div style="width: 480px; height: 480px;grid-column: 1 / -1;grid-row: 1 / -1;z-index: 1;">
-                <div style="display:grid;grid-template-columns: repeat(8, 1fr);grid-template-rows: repeat(8, 1fr)">
-                    {#each board.state as row, index}
-                        {@const reverseIndex = board.state.length - index - 1}
-                        {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
-                        {#if !boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
-                    {/each}
+                {/if}
+                <div style="width: 480px; height: 480px;grid-column: 1 / -1;grid-row: 1 / -1;z-index: 1;">
+                    <div style="display:grid;grid-template-columns: repeat(8, 1fr);grid-template-rows: repeat(8, 1fr)">
+                        {#each board.state as row, index}
+                            {@const reverseIndex = board.state.length - index - 1}
+                            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
+                            {#if !boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
+                        {/each}
+                    </div>
                 </div>
             </div>
+            <div style="display: flex; gap: 20px; width: 480px;text-align: right;justify-content: space-between;">
+                <div><p style=" background: lightgray;padding: 5px;border-radius: 5px; box-shadow: 5px 5px 2px rgb(0,0,0,0.25);" in:fly= {{x:100, duration:2000, opacity:0,delay:2000}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p></div>
+                <div style="display:flex;"><button in:fly={{x:-25, duration:2000, opacity:0,delay:2000}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
+                <button key={board.turn} style="background-color: {board.turn >= 2 ? 'lightgray' : 'dimgray'}" 
+                    in:fly={{x:-25, duration:2000, opacity:0, delay:2000}} 
+                    onclick={() => {if (board.turn >= 2) {board.moves.push("0.5-0.5"); gameResult = 0.5;}}}>
+                Offer Draw</button></div>
+            </div>
         </div>
-        <div style="display: flex; gap: 20px; width: 480px;">
-            <p style=" background: lightgray;padding: 5px;border-radius: 5px; box-shadow: 5px 5px 2px rgb(0,0,0,0.25);" in:fly= {{x:100, duration:2000, opacity:0}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p>
-            <button in:fly={{x:-25, duration:2000, opacity:0}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
+        <div in:fade= {{duration:200}} style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
+            <h2 style="text-align: center;">Moves</h2>
+            <div style="overflow-y: scroll;height:63vh;">
+                {#each board.moves as _,index}
+                    {#if board.moves.length > 2*index  + 1}
+                        <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} {board.moves[index*2+1]} </p>
+                    {:else if board.moves.length >= 2*index + 1}
+                        <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} </p>
+                    {/if}
+                {/each}
+            </div>
         </div>
-    </div>
-    <div in:fade= {{duration:200}} style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
-        <h2 style="text-align: center;">Moves</h2>
-        <div style="overflow-y: scroll;height:63vh;">
-            {#each board.moves as _,index}
-                {#if board.moves.length > 2*index  + 1}
-                    <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} {board.moves[index*2+1]} </p>
-                {:else if board.moves.length >= 2*index + 1}
-                    <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} </p>
-                {/if}
-            {/each}
-        </div>
-    </div>
+    {/if}
 </div>
 
 <style>
@@ -579,7 +590,6 @@
         background: lightgray;
         border-color: lightgray;
         height: 32px;
-        margin-left: auto; 
         padding: 5px; 
         box-shadow: 5px 5px 2px rgb(0,0,0,0.25);
     }

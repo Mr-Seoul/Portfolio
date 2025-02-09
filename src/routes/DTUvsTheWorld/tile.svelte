@@ -62,12 +62,14 @@
 
 {#if pageLoaded}
     <div role="region" id ="{index}" draggable={false} ondragstart={e => e.preventDefault()}  in:fly= {{x:sideSwipe.x,y:sideSwipe.y, duration:750, opacity:0, delay:delay}} style="background: {color};">
-        <div>{#if highlighted}
-            <img alt="" id="highlightDot" src="assets/DTUvsTheWorld/Dot.png">
-        {/if} 
-        {#if hasPiece} 
-            <img alt="" in:fly={{x:animationDistance().x, y:animationDistance().y, duration:150, opacity:100}} id={piece} src={src}>
-        {/if}</div>
+        <div>
+            {#if highlighted}
+                <img alt="" id="highlightDot" src="assets/DTUvsTheWorld/Dot.png">
+            {/if} 
+            {#if hasPiece} 
+                <img alt="" in:fly={{x:animationDistance().x, y:animationDistance().y, duration:150, opacity:100}} id={piece} src={src}>
+            {/if}
+        </div>
     </div>
 {/if}
 
