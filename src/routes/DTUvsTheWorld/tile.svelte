@@ -2,7 +2,6 @@
 	import { onMount } from "svelte";
     import {fly} from "svelte/transition";
     import {resetPiece} from "$lib/DTUvsTheWorld";
-	import Page from "../+page.svelte";
 
     let {
         time = 200,
@@ -93,7 +92,7 @@
         width: 60px;
         top: 0;
         left: 0;
-        z-index: 10000;
+        z-index: 1;
     }
 
     #highlightDot {
@@ -102,6 +101,6 @@
         top: 0;
         left: 0;
         opacity: 70%;
-        z-index: 9999;
+        z-index: 2;
     }
 </style>

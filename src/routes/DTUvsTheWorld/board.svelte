@@ -2,12 +2,13 @@
     import {fly,fade} from "svelte/transition";
     import Tile from "./tile.svelte";
     import { onMount } from "svelte";
+    import {resetPiece} from "$lib/DTUvsTheWorld";
 
     let board = $state({
         //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
         state: [],
         moves: [],
-        side: 1,
+        side: 1, //1 = white, 2 = black
         turn: 1
     } );
 
@@ -37,9 +38,10 @@
     let pageLoaded = $state(false);
 
     let boardObject = $state();
-
-
     let gameResult = $state();
+    let pawnPromoting = $state(false);
+    let SavedSelectedposition = $state({x:-1,y:-1})
+    let SavedTileposition = $state({x:-1,y:-1})
 
     function getTile(input,currentBoard) {
         return currentBoard.state[inputToIndex(input)];
@@ -64,19 +66,47 @@
     }
 
     function movePiece(XYFrom, XYTo,currentBoard) {
-            currentBoard.moves.push(XYToChess(XYFrom,XYTo,currentBoard));
-            
-            //if en passent also remove piece above:
-            //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
-            let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
-            if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard).toLowerCase() == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
-                setTile({x:XYTo.x,y:XYTo.y + dir}, "",currentBoard);
-            }
-            setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
-            setTile(XYFrom,"",currentBoard);
+        //if en passent also remove piece above:
+        //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
+        let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
+        if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard) == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
+            setTile({x:XYTo.x,y:XYTo.y + dir}, "",currentBoard);
+        }
+        setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
+        setTile(XYFrom,"",currentBoard);
+    }
 
-            changeSide(currentBoard);
-            incrementTurn(currentBoard);
+    function MakeMove(XYFrom, XYTo,currentBoard) {
+        currentBoard.moves.push(XYToChess(XYFrom,XYTo,currentBoard));
+        movePiece(XYFrom,XYTo,currentBoard);
+        
+        changeSide(currentBoard);
+        incrementTurn(currentBoard);
+    }
+
+    function MoveAndPromotePawn(XYFrom,XYTo,promotion) {
+        XYFrom = inputToXY(XYFrom);
+        XYTo = inputToXY(XYTo);
+        promotion = (getSide(board) == 1 ? promotion.toUpperCase() : promotion.toLowerCase());
+
+        MakeFinalMove(XYFrom,XYTo);
+        setTile(XYTo,promotion,board);
+        setAllLegalMoves(board);
+        pawnPromoting = false;
+        previousSelectedPosition = XYFrom;
+        //Hacky Way to add the promotion type to notation.
+        board.moves[board.moves.length -1] += promotion.toUpperCase();
+    }
+
+    function MakeFinalMove(XYFrom,XYTo) {
+        XYFrom = inputToXY(XYFrom);
+        XYTo = inputToXY(XYTo);
+        MakeMove(XYFrom,XYTo,board);
+        setAllLegalMoves(board);
+        resetHightlight();
+
+        previousSelectedPosition = selectedPosition;
+        selectedPosition = {x:-1,y:-1};
     }
 
     function inputToIndex(input) {
@@ -177,31 +207,61 @@
     
     function ChessToXY(Chess) {
         let XY = {x:-1,y:-1}
-        switch(Chess[Chess.length-2]) {
-            case "a":
-                XY.x = 7;
-                break;
-            case "b":
-                XY.x = 6;
-                break;
-            case "c":
-                XY.x =  5;
-                break;
-            case "d":
-                XY.x =  4;
-                break;
-            case "e":
-                XY.x = 3;
-                break;
-            case "f":
-                XY.x =  2;
-                break;
-            case "g":
-                XY.x =  1;
-                break;
-            case "h":
-                XY.x =  0;
-                break;
+        //Incase the Last move was a pawn promotion
+        if (['1','2','3','4','5','6','7'].includes(Chess[Chess.length-1]))
+            switch(Chess[Chess.length-2]) {
+                case "a":
+                    XY.x = 7;
+                    break;
+                case "b":
+                    XY.x = 6;
+                    break;
+                case "c":
+                    XY.x =  5;
+                    break;
+                case "d":
+                    XY.x =  4;
+                    break;
+                case "e":
+                    XY.x = 3;
+                    break;
+                case "f":
+                    XY.x =  2;
+                    break;
+                case "g":
+                    XY.x =  1;
+                    break;
+                case "h":
+                    XY.x =  0;
+                    break;
+            }
+        else {
+            switch(Chess[Chess.length-3]) {
+                case "a":
+                    XY.x = 7;
+                    break;
+                case "b":
+                    XY.x = 6;
+                    break;
+                case "c":
+                    XY.x =  5;
+                    break;
+                case "d":
+                    XY.x =  4;
+                    break;
+                case "e":
+                    XY.x = 3;
+                    break;
+                case "f":
+                    XY.x =  2;
+                    break;
+                case "g":
+                    XY.x =  1;
+                    break;
+                case "h":
+                    XY.x =  0;
+                    break;
+            }
         }
         XY.y = Number(Chess[Chess.length-1] -1);
         return XY;
@@ -273,6 +333,7 @@
         let Y = Math.floor(index/8);
         let pos = {x:X,y:Y};
         let Col = getColour(index,currentBoard);
+        console.log(currentBoard);
 
         function differentColour(input1,input2) {
             let obj1 = inputToXY(input1);
@@ -298,7 +359,7 @@
             let obj1 = inputToXY(input);
             let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
             //Move own piece
-            movePiece(pos, obj1, hypotheticalBoard);
+            MakeMove(pos, obj1, hypotheticalBoard);
 
             return !inCheck(hypotheticalBoard,Col);
         }
@@ -485,7 +546,7 @@
 	}
 
     function onmousedown() {
-        if (!gameResult) {
+        if (!gameResult && !pawnPromoting) {
             if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
                 if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
                     selectedPosition = tilePosition;
@@ -497,11 +558,15 @@
 
     function onmouseup() {
         if (tilePosition != selectedPosition && getColour(selectedPosition,board) != getColour(tilePosition,board) && allLegalMoves[JSON.stringify(XYToIndex(selectedPosition))] && allLegalMoves[JSON.stringify(XYToIndex(selectedPosition))].some(obj => obj.x == tilePosition.x && obj.y == tilePosition.y) && getColour(selectedPosition,board) == getSide(board)) {
-            movePiece(selectedPosition,tilePosition,board);
-            setAllLegalMoves(board);
-            previousSelectedPosition = selectedPosition;
-            selectedPosition = {x:-1,y:-1};
-            resetHightlight();
+            if (Math.floor(XYToIndex(tilePosition)/8) == (getSide(board) ==  1 ? 7 : 0) && getTile(selectedPosition,board).toLowerCase() == 'p') {
+                //Pawn Promotion Logic
+                pawnPromoting = true;
+                SavedSelectedposition = selectedPosition;
+                SavedTileposition = tilePosition;
+                
+            } else {
+                MakeFinalMove(selectedPosition,tilePosition);
+            }
 
             if (getNumLegalMoves() == 0) {
                 if (inCheck(board,getSide(board))) {
@@ -541,15 +606,25 @@
     {#if pageLoaded}
         <div role="button" tabindex="0" {onmousedown} {onmouseup} {onmousemove} {onmouseleave} bind:this={boardObject} in:fly= {{x:-50,duration:2000,opacity:0}} id="board">
             <div style="display:grid;grid-template-columns: 1fr; grid-template-rows: auto auto; width:480px;height:480px;">
+                {#if pawnPromoting}
+                    <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
+                        <div style="display:grid;grid-template-columns: auto auto auto auto; grid-template-rows: 1fr;padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'q',board);}}><img alt="" id="Queen" src={resetPiece(getSide(board)==1 ? 'Q' : 'q')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'n',board);}}><img alt="" id="Knight" src={resetPiece(getSide(board)==1 ? 'N' : 'n')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'b',board);}}><img alt="" id="Bishop" src={resetPiece(getSide(board)==1 ? 'B' : 'b')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'r',board);}}><img alt="" id="Rook" src={resetPiece(getSide(board)==1 ? 'R' : 'r')}></button>
+                        </div>
+                    </div>
+                {/if}
                 {#if gameResult}
                     <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
                         <div style="padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
                             <p>{gameMessage()}</p>
                             <button onclick={() => {resetBoard(board);gameResult = null;setAllLegalMoves(board);}}>Play Again</button>
                         </div>
-                        
                     </div>
                 {/if}
+                
                 <div style="width: 480px; height: 480px;grid-column: 1 / -1;grid-row: 1 / -1;z-index: 1;">
                     <div style="display:grid;grid-template-columns: repeat(8, 1fr);grid-template-rows: repeat(8, 1fr)">
                         {#each board.state as row, index}
