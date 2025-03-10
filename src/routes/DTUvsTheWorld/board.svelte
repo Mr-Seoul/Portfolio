@@ -283,7 +283,9 @@
             //Only check for opposing colours
             if (getColour(i,currentBoard) != Col) {
                 //Check every move the opponent can make
-                getLegalMoves(i, currentBoard,false).forEach((element)=>{
+                let curLegalMoves = getLegalMoves(i, currentBoard,false);
+                //Check attacking the king is one of the possible moves
+                curLegalMoves.forEach((element)=>{
                     if (element.x == kingPos.x && element.y == kingPos.y) {
                         Checked = true;
                     }
@@ -322,13 +324,13 @@
     }
 
     function getNumLegalMoves() {
-        let sum = 0;
-        Object.values(allLegalMoves).forEach((element) => {sum+=element.length});
-        return sum;
+        let num = 0;
+        Object.values(allLegalMoves).forEach((element) => {num+=element.length});
+        return num;
     }
 
-    function getLegalMoves(input,currentBoard,checkForCheck) {
-        let index = inputToIndex(input);
+    function getLegalMoves(index,currentBoard,checkForCheck) {
+        index = inputToIndex(index);
 
         if (! inBoard(index)) { 
             return [];  //Return empty array if square is off the board
@@ -342,38 +344,45 @@
         let pos = {x:X,y:Y};
         let Col = getColour(index,currentBoard);
 
-        function differentColour(input1,input2) {
-            let obj1 = inputToXY(input1);
-            let obj2 = inputToXY(input2);
+        function differentColour(obj1,obj2) {
+            obj1 = inputToXY(obj1);
+            obj2 = inputToXY(obj2);
             return (getColour(obj1,currentBoard)) != getColour(obj2,currentBoard);
         }
 
-        function inBoard(input) {
-            let obj1 = inputToXY(input);
+        function inBoard(obj1) {
+            obj1 = inputToXY(obj1);
 
             return (obj1.x > -1 && obj1.y > -1 && obj1.x < 8 && obj1.y < 8);
         }
 
-        function isOpponent(input) {
-            let obj1 = inputToXY(input);
+        function isOpponent(obj1) {
+            obj1 = inputToXY(obj1);
             return getColour(obj1,currentBoard) == (Col == 1 ? 2 : 1);
         }
 
-        function notInCheck(input) {
+        function notInCheck(obj1) {
+            
             if (!checkForCheck) {
                 return true;
             }
-            let obj1 = inputToXY(input);
-            let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+            obj1 = inputToXY(obj1);
+            let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));         
             //Move own piece
-            MakeMove(pos, obj1, hypotheticalBoard);
-
+            MakeMove(pos, obj1, hypotheticalBoard);   
             return !inCheck(hypotheticalBoard,Col);
         }
 
-        function addLegalMove(input) {
-            let obj1 = inputToXY(input);
-            if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {legalMoves.push(obj1);if (!checkForCheck&&getTile(obj1,currentBoard).toLowerCase() == "k") {return legalMoves};}
+        function addLegalMove(obj1) {
+            obj1 = inputToXY(obj1);
+            if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {
+                
+                legalMoves.push(obj1);
+                
+                if (!checkForCheck&&getTile(obj1,currentBoard).toLowerCase() == "k") {
+                    return legalMoves
+                };}
+            
         }
 
         function firstMove() {
@@ -384,8 +393,8 @@
             }
         }
 
-        function enPassent(input) {
-            let obj1 = inputToXY(input);
+        function enPassent(obj1) {
+            obj1 = inputToXY(obj1);
 
             let lastMove = currentBoard.moves.length != 0 ? ChessToXY(currentBoard.moves[currentBoard.moves.length-1]) : {x:-1,y:-1};
             //Check if target square is refering to the last move
@@ -410,20 +419,22 @@
             return false;
         }
 
-        function isEmpty(input) {
-            let obj1 = inputToXY(input);
+        function isEmpty(input1) {
+            input1 = inputToXY(input1);
             
-
-            return (getTile(obj1,currentBoard) == "");
+            return (getTile(input1,currentBoard) == "");
         }
 
-        function isEmptyorOpponent(input) {
-            let obj1 = inputToXY(input);
-            return (isEmpty(obj1) || differentColour(pos,obj1));
+        function isEmptyorOpponent(input1) {
+            input1 = inputToXY(input1);
+            
+            return (isEmpty(input1) || differentColour(pos,input1));
+            
         }
 
-        function checkDirection(input1, dir) {
-            let startSquare = inputToXY(input1);
+        function checkDirection(startSquare, dir) {
+            startSquare = inputToXY(startSquare);
+            dir = inputToXY(dir);
             let currentSquare = {x:startSquare.x,y:startSquare.y};
             currentSquare.x += dir.x;
             currentSquare.y += dir.y;
@@ -449,8 +460,8 @@
             }
         }
 
-        function checkKingDirection(input1, dir,pieces) {
-            let startSquare = inputToXY(input1);
+        function checkKingDirection(startSquare, dir,pieces) {
+            startSquare = inputToXY(startSquare);
             dir = inputToXY(dir);
             let currentSquare = {x:startSquare.x,y:startSquare.y};
             //Move off of king
@@ -575,7 +586,8 @@
             //Check for pawns
             checkKingSquare(kingPos,(Col == 1 ? {x:-1,y:-1} : {x:-1,y:1}),[(Col==1 ? "P":"p")]);
             checkKingSquare(kingPos,(Col == 1 ? {x:1,y:-1} : {x:1,y:1}),[(Col==1 ? "P":"p")]);
-        }
+        }        
+
         return legalMoves;
     }
 
