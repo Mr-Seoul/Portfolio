@@ -90,7 +90,7 @@
         promotion = (getSide(board) == 1 ? promotion.toUpperCase() : promotion.toLowerCase());
 
         MakeFinalMove(XYFrom,XYTo);
-        setTile(XYTo,promotion,board);
+        setTile(XYTo,promotion,board,false);
         setAllLegalMoves(board);
         pawnPromoting = false;
         previousSelectedPosition = XYFrom;
@@ -98,11 +98,13 @@
         board.moves[board.moves.length -1] += promotion.toUpperCase();
     }
 
-    function MakeFinalMove(XYFrom,XYTo) {
+    function MakeFinalMove(XYFrom,XYTo,updateLegalMoves) {
         XYFrom = inputToXY(XYFrom);
         XYTo = inputToXY(XYTo);
         MakeMove(XYFrom,XYTo,board);
-        setAllLegalMoves(board);
+        if (updateLegalMoves) {
+            setAllLegalMoves(board);
+        }
         resetHightlight();
 
         previousSelectedPosition = selectedPosition;
@@ -565,7 +567,7 @@
                 SavedTileposition = tilePosition;
                 
             } else {
-                MakeFinalMove(selectedPosition,tilePosition);
+                MakeFinalMove(selectedPosition,tilePosition,true);
             }
 
             if (getNumLegalMoves() == 0) {
