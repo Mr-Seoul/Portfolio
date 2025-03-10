@@ -16,14 +16,19 @@
         state: []
     })
     
+    function initHighlight() {
+        for (let i = 0; i < 64; i++) {
+            highlight.state.push(false);
+        }
+    }
+
     function getHightlight(input) {
         return highlight.state[inputToIndex(input)];
     }
 
     function resetHightlight() {
-        highlight.state = [];
         for (let i = 0; i < 64; i++) {
-            highlight.state.push(false);
+            highlight.state[i] = false;
         }
     }
 
@@ -101,6 +106,7 @@
     function MakeFinalMove(XYFrom,XYTo,updateLegalMoves) {
         XYFrom = inputToXY(XYFrom);
         XYTo = inputToXY(XYTo);
+        
         MakeMove(XYFrom,XYTo,board);
         if (updateLegalMoves) {
             setAllLegalMoves(board);
@@ -577,7 +583,7 @@
         try {
             resetBoard(board);
             setAllLegalMoves(board);
-            
+            initHighlight();
         } catch (error) {
             console.error("Error in onMount:", error);
         }
