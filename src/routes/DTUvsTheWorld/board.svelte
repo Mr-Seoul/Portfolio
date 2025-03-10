@@ -335,7 +335,6 @@
         let Y = Math.floor(index/8);
         let pos = {x:X,y:Y};
         let Col = getColour(index,currentBoard);
-        console.log(currentBoard);
 
         function differentColour(input1,input2) {
             let obj1 = inputToXY(input1);
@@ -432,7 +431,36 @@
             }
         }
 
-        switch(getTile(index,currentBoard).toLowerCase()) {
+        function checkKingSquare(input1, dir, pieces) {
+            input1 = inputToXY(input1);
+            dir = inputToXY(dir);
+            let currentSquare = {x:input1.x + dir.x, y:input1.y+dir.y}
+
+            //Check if it is an opponent square
+            if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
+                legalMoves.push(input1);
+            }
+        }
+
+        function checkKingDirection(input1, dir,pieces) {
+            let startSquare = inputToXY(input1);
+            dir = inputToXY(dir);
+            let currentSquare = {x:startSquare.x,y:startSquare.y};
+            //Move off of king
+            currentSquare.x += dir.x;
+            currentSquare.y += dir.y;
+            //Move to next square that isn't empty
+            while (inBoard(currentSquare) && isEmpty(currentSquare)) {
+                currentSquare.x += dir.x;
+                currentSquare.y += dir.y;
+            }
+            //Check if it is an opponent square
+            if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
+                legalMoves.push(input1);
+            }
+        }
+        if (checkForCheck) {
+            switch(getTile(index,currentBoard).toLowerCase()) {
             //Pawns
             case "p":
                 let direction = (Col == 1? 1 : -1);
@@ -506,6 +534,40 @@
                     }
                 }
                 break;
+            }
+        } else {
+            //Only checking for checks
+            
+            //Find king position (Changes side since this is after a move is made, hence the sides are switched)
+            const isKing = (element) => element == (Col==1? "k":"K");
+            const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
+
+            //Check straight directions
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:0,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:0,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
+
+            //Check diagonals directions
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
+            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
+
+            //Check for knights
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:1,y:2},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-1,y:2},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:1,y:-2},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-1,y:-2},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:2,y:1},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:2,y:-1},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-2,y:1},[(Col==1 ? "N":"n")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-2,y:-1},[(Col==1 ? "N":"n")])}
+            
+            //Check for pawns
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,(Col == 1 ? {x:-1,y:-1} : {x:-1,y:1}),[(Col==1 ? "P":"p")])}
+            if (legalMoves.length == 0) {checkKingSquare(kingPos,(Col == 1 ? {x:1,y:-1} : {x:1,y:1}),[(Col==1 ? "P":"p")])}
+
         }
         return legalMoves;
     }
