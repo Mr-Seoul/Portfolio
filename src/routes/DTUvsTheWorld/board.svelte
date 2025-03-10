@@ -439,6 +439,7 @@
             //Check if it is an opponent square
             if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
                 legalMoves.push(input1);
+                return legalMoves;
             }
         }
 
@@ -457,6 +458,7 @@
             //Check if it is an opponent square
             if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
                 legalMoves.push(input1);
+                return legalMoves;
             }
         }
         if (checkForCheck) {
@@ -543,31 +545,30 @@
             const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
 
             //Check straight directions
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:0,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:0,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);}
+            checkKingDirection(kingPos,{x:1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
+            checkKingDirection(kingPos,{x:-1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
+            checkKingDirection(kingPos,{x:0,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
+            checkKingDirection(kingPos,{x:0,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
 
             //Check diagonals directions
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
-            if (legalMoves.length == 0) {checkKingDirection(kingPos,{x:-1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);}
+            checkKingDirection(kingPos,{x:1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
+            checkKingDirection(kingPos,{x:1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
+            checkKingDirection(kingPos,{x:-1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
+            checkKingDirection(kingPos,{x:-1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
 
             //Check for knights
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:1,y:2},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-1,y:2},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:1,y:-2},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-1,y:-2},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:2,y:1},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:2,y:-1},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-2,y:1},[(Col==1 ? "N":"n")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,{x:-2,y:-1},[(Col==1 ? "N":"n")])}
+            checkKingSquare(kingPos,{x:1,y:2},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:-1,y:2},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:1,y:-2},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:-1,y:-2},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:2,y:1},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:2,y:-1},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:-2,y:1},[(Col==1 ? "N":"n")]);
+            checkKingSquare(kingPos,{x:-2,y:-1},[(Col==1 ? "N":"n")]);
             
             //Check for pawns
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,(Col == 1 ? {x:-1,y:-1} : {x:-1,y:1}),[(Col==1 ? "P":"p")])}
-            if (legalMoves.length == 0) {checkKingSquare(kingPos,(Col == 1 ? {x:1,y:-1} : {x:1,y:1}),[(Col==1 ? "P":"p")])}
-
+            checkKingSquare(kingPos,(Col == 1 ? {x:-1,y:-1} : {x:-1,y:1}),[(Col==1 ? "P":"p")]);
+            checkKingSquare(kingPos,(Col == 1 ? {x:1,y:-1} : {x:1,y:1}),[(Col==1 ? "P":"p")]);
         }
         return legalMoves;
     }
