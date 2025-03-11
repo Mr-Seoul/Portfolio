@@ -59,7 +59,7 @@
         }        
     }
 
-    function MoveAndPromotePawn(XYFrom,XYTo,promotion,currentBoard) {
+    function MoveAndPromotePawn(XYFrom,XYTo,promotion) {
         XYFrom = inputToXY(XYFrom);
         XYTo = inputToXY(XYTo);
         promotion = (getSide(board) == 1 ? promotion.toUpperCase() : promotion.toLowerCase());
