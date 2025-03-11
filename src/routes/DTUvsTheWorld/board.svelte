@@ -1,6 +1,5 @@
 <script>
     import {fly,fade} from "svelte/transition";
-    import Tile from "./tile.svelte";
     import { onMount } from "svelte";
     import {resetPiece} from "$lib/DTUvsTheWorld";
     import { tick } from "svelte";
@@ -28,6 +27,8 @@
     let pageLoaded = $state(false);
 
     let boardObject = $state();
+    let Tile = $state();
+    let TilesLoaded = $state(false);
     let gameResult = $state();
     let pawnPromoting = $state(false);
     let SavedSelectedposition = $state({x:-1,y:-1})
@@ -127,7 +128,7 @@
         return num;
     }
 
-    onMount(() => {
+    onMount(async () => {
         try {
             if (typeof(Worker) != "undefined") {
                 //Webworker support, so initialize webworkers
@@ -142,6 +143,9 @@
             resetBoard(board);
             initHighlight();
             setAllLegalMoves(board);
+            const TileModule = await import("./tile.svelte");
+            Tile = TileModule.default;
+            TilesLoaded = true;
         } catch (error) {
             console.error("Error in onMount:", error);
         }
@@ -249,11 +253,13 @@
                 
                 <div style="width: 480px; height: 480px;grid-column: 1 / -1;grid-row: 1 / -1;z-index: 1;">
                     <div style="display:grid;grid-template-columns: repeat(8, 1fr);grid-template-rows: repeat(8, 1fr)">
-                        {#each board.state as row, index}
-                            {@const reverseIndex = board.state.length - index - 1}
-                            {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
-                            {#if !boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
-                        {/each}
+                        {#if TilesLoaded}
+                            {#each board.state as row, index}
+                                {@const reverseIndex = board.state.length - index - 1}
+                                {#if boardFlipped} <Tile highlighted={getHightlight(reverseIndex)} prevTile={previousSelectedPosition} index={reverseIndex} delay={(reverseIndex%8 + Math.floor(reverseIndex/8))*50} piece={board.state[reverseIndex]}></Tile>{/if}
+                                {#if !boardFlipped} <Tile highlighted={getHightlight(index)} index={index} delay={(index%8 + Math.floor(index/8))*50} piece={board.state[index]}></Tile>{/if}
+                            {/each}
+                        {/if}
                     </div>
                 </div>
             </div>
