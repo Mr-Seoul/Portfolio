@@ -128,12 +128,16 @@
 
     onMount(() => {
         try {
-            w = new Worker(new URL("$lib/LegalMoves.js", import.meta.url), { type: "module" });
-            w.onmessage = function(event){
-                const {moves} = event.data;
-                allLegalMoves = moves;
-                calculatingLegalMoves = false;
-            };
+            if (typeof(Worker) != "undefined") {
+                //Webworker support, so initialize webworkers
+                w = new Worker(new URL("$lib/LegalMoves.js", import.meta.url), { type: "module" });
+                w.onmessage = function(event){
+                    const {moves} = event.data;
+                    allLegalMoves = moves;
+                    calculatingLegalMoves = false;
+                };
+            }   
+            
             resetBoard(board);
             initHighlight();
             setAllLegalMoves(board);
