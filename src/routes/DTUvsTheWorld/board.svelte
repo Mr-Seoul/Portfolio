@@ -3,6 +3,7 @@
     import Tile from "./tile.svelte";
     import { onMount } from "svelte";
     import {resetPiece} from "$lib/DTUvsTheWorld";
+    import { tick } from "svelte";
     import {movePiece,MakeMove,getSide,inputToIndex,inputToXY,getColour, indexToXY,XYToIndex, XYToChess,ChessToXY,getTile,setTile,incrementTurn,changeSide,getLegalMoves, inCheck} from "$lib/Chess";
 
     let board = $state({
@@ -47,16 +48,16 @@
     }
 
     function resetHightlight() {
-        for (let i = 0; i < 64; i++) {
-            highlight.state[i] = false;
-        }
+        highlight.state.fill(false);
     }
 
-    function mapHighlight(arr) {
+    async function mapHighlight(arr) {
         resetHightlight();
         for (let i = 0; i < arr.length; i++) {
             highlight.state[XYToIndex(arr[i])] = true;
-        }        
+        }    
+        
+        await tick(); 
     }
 
     function MoveAndPromotePawn(XYFrom,XYTo,promotion) {

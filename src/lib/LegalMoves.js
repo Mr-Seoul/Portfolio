@@ -1,4 +1,4 @@
-import {movePiece,MakeMove,getSide,inputToIndex,inputToXY,getColour, indexToXY,XYToIndex, XYToChess,ChessToXY,getTile,setTile,incrementTurn,changeSide,getLegalMoves, inCheck} from "$lib/Chess";
+import {getSide, getColour, getLegalMoves} from "$lib/Chess";
 
 onmessage = function (event) {
     let allLegalMoves = {};
