@@ -197,8 +197,6 @@ export function MakeMove(XYFrom, XYTo,currentBoard) {
     incrementTurn(currentBoard);
 }
 
-
-
 export function getLegalMoves(index,currentBoard,checkForCheck) {
     index = inputToIndex(index);
 
@@ -231,7 +229,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         return getColour(obj1,currentBoard) == (Col == 1 ? 2 : 1);
     }
 
-    function notInCheck(obj1) {
+    function notInCheck(obj1,currentBoard) {
         
         if (!checkForCheck) {
             return true;
@@ -245,14 +243,13 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
 
     function addLegalMove(obj1) {
         obj1 = inputToXY(obj1);
-        if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1)) {
+        if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1,currentBoard)) {
             
             legalMoves.push(obj1);
             
             if (!checkForCheck&&getTile(obj1,currentBoard).toLowerCase() == "k") {
                 return legalMoves
             };}
-        
     }
 
     function firstMove() {

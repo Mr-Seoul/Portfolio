@@ -137,6 +137,17 @@
                     const {moves} = event.data;
                     allLegalMoves = moves;
                     calculatingLegalMoves = false;
+
+                    if (getNumLegalMoves() == 0) {
+                        if (inCheck(board,getSide(board))) {
+                            gameResult = getSide(board) == 1 ? 2 : 1;
+                            board.moves.push(getSide(board) == 1 ? "0-1" : "1-0");
+                        } else {
+                            gameResult = 0.5;
+                            board.moves.push("0.5-0.5");
+                        }
+                        resetHightlight();
+                    }
                 };
             }   
             
@@ -192,17 +203,6 @@
                 
             } else {
                 MakeFinalMove(selectedPosition,tilePosition,true);
-            }
-
-            if (getNumLegalMoves() == 0) {
-                if (inCheck(board,getSide(board))) {
-                    gameResult = getSide(board) == 1 ? 2 : 1;
-                    board.moves.push(getSide(board) == 1 ? "0-1" : "1-0");
-                } else {
-                    gameResult = 0.5;
-                    board.moves.push("0.5-0.5");
-                }
-                resetHightlight();
             }
 
         } else if (getTile(tilePosition,board) == "") {
