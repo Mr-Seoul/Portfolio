@@ -10,5 +10,6 @@ onmessage = function (event) {
             allLegalMoves[JSON.stringify(i)] = getLegalMoves(i,currentBoard,true);
         }
     }
-    postMessage({"moves":allLegalMoves});
+    
+    postMessage({moves:allLegalMoves});
 };

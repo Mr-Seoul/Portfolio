@@ -40,120 +40,88 @@ export function XYToIndex(XY) {
     return XY.x +XY.y*8
 }
 
-export function XYToChess(input1, input2,currentBoard) {
-    let XYFrom = inputToXY(input1);
-    let XYTo = inputToXY(input2);
-    if (XYFrom.x < 0 || XYFrom.x > 7 || XYFrom.y < 0 || XYFrom.y > 7) {
-            return "";
-        }
-    if (XYTo.x < 0 || XYTo.x > 7 || XYTo.y < 0 || XYTo.y > 7) {
-            return "";
-        }
-    function XYToFile(XY) {
-        let result = "";
-        switch(XY.x) {
-            case 0:
-                result = "h";
-                break;
-            case 1:
-                result = "g";
-                break;
-            case 2:
-                result = "f";
-                break;
-            case 3:
-                result = "e";
-                break;
-            case 4:
-                result = "d";
-                break;
-            case 5:
-                result = "c";
-                break;
-            case 6:
-                result = "b";
-                break;
-            case 7:
-                result = "a";
-                break;
-        }
-        return result;
+export function updateChessMovesList(currentBoard, obj) {
+    //Have all keys present, even if they are not relevant
+    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, promotionPiece: ""};
+    if (obj.hasOwnProperty('notation')) {
+        SaveObj.notation = obj.notation;
+        currentBoard.moves.push(SaveObj);
     }
-    let pieceLetter = getTile(XYFrom,currentBoard).toLowerCase() == "p" ? "" : getTile(XYFrom,currentBoard).toUpperCase();
-    let toFile = XYToFile(XYTo);
-    let fromFile = getTile(XYFrom,currentBoard).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
-    let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
-    //En passent logic
-    if (getTile(XYFrom,currentBoard).toLowerCase() == "p") {
-        let Col = getColour(XYFrom,currentBoard);
-        let dir = Col == 1 ? -1 : 1;
-        if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
-            captureLetter = "x";
-        }
-    }
-    return pieceLetter + fromFile + captureLetter + toFile + (XYTo.y+1);
-}
-
-export function ChessToXY(Chess) {
-    let XY = {x:-1,y:-1}
-    //Incase the Last move was a pawn promotion
-    if (['1','2','3','4','5','6','7'].includes(Chess[Chess.length-1]))
-        switch(Chess[Chess.length-2]) {
-            case "a":
-                XY.x = 7;
-                break;
-            case "b":
-                XY.x = 6;
-                break;
-            case "c":
-                XY.x =  5;
-                break;
-            case "d":
-                XY.x =  4;
-                break;
-            case "e":
-                XY.x = 3;
-                break;
-            case "f":
-                XY.x =  2;
-                break;
-            case "g":
-                XY.x =  1;
-                break;
-            case "h":
-                XY.x =  0;
-                break;
-        }
     else {
-        switch(Chess[Chess.length-3]) {
-            case "a":
-                XY.x = 7;
-                break;
-            case "b":
-                XY.x = 6;
-                break;
-            case "c":
-                XY.x =  5;
-                break;
-            case "d":
-                XY.x =  4;
-                break;
-            case "e":
-                XY.x = 3;
-                break;
-            case "f":
-                XY.x =  2;
-                break;
-            case "g":
-                XY.x =  1;
-                break;
-            case "h":
-                XY.x =  0;
-                break;
+        let XYFrom = obj.XYFrom
+        let XYTo = obj.XYTo
+        if (XYFrom.x < 0 || XYFrom.x > 7 || XYFrom.y < 0 || XYFrom.y > 7) {
+                return "";
+            }
+        if (XYTo.x < 0 || XYTo.x > 7 || XYTo.y < 0 || XYTo.y > 7) {
+                return "";
+            }
+        function XYToFile(XY) {
+            let result = "";
+            switch(XY.x) {
+                case 0:
+                    result = "h";
+                    break;
+                case 1:
+                    result = "g";
+                    break;
+                case 2:
+                    result = "f";
+                    break;
+                case 3:
+                    result = "e";
+                    break;
+                case 4:
+                    result = "d";
+                    break;
+                case 5:
+                    result = "c";
+                    break;
+                case 6:
+                    result = "b";
+                    break;
+                case 7:
+                    result = "a";
+                    break;
+            }
+            return result;
         }
+        let pieceLetter = getTile(XYFrom,currentBoard).toLowerCase() == "p" ? "" : getTile(XYFrom,currentBoard).toUpperCase();
+        let toFile = XYToFile(XYTo);
+        let fromFile = getTile(XYFrom,currentBoard).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
+        let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
+        let enemyCheckLetter = "";
+        //En passent logic
+        if (getTile(XYFrom,currentBoard).toLowerCase() == "p") {
+            let Col = getColour(XYFrom,currentBoard);
+            let dir = Col == 1 ? -1 : 1;
+            if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
+                captureLetter = "x";
+            }
+        }
+        //Enemy in check Logic (for plus at end of notation)
+        let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+        movePiece(XYFrom,XYTo,hypotheticalBoard);
+        if (inCheck(hypotheticalBoard,getSide(hypotheticalBoard) == 1? 2 : 1)) {
+            console.log(hypotheticalBoard);
+            enemyCheckLetter = "+";
+        }
+        //Piece disambiguation (check if the target square can be reached by two pieces, except for pawns as they always have this (already implemented))
+
+        //First check how many pieces can reach the target. Of these, check which are in the same file and or rank.
+        //Include the information that differs from the piece we want to move.
+        //First add the file, then rank (only the ones that are relevant)
+
+        let notationstring = pieceLetter + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
+        console.log(notationstring)
+        SaveObj.XYFrom = obj.XYFrom;
+        SaveObj.XYTo = obj.XYTo;
+        SaveObj.capture = getTile(XYTo,currentBoard) != "";
+        SaveObj.piece = getTile(XYFrom,currentBoard);
+        SaveObj.notation = notationstring;
+
+        currentBoard.moves.push(SaveObj);
     }
-    XY.y = Number(Chess[Chess.length-1] -1);
-    return XY;
 }
 
 export function getTile(input,currentBoard) {
@@ -190,7 +158,7 @@ export function movePiece(XYFrom, XYTo,currentBoard) {
 }
 
 export function MakeMove(XYFrom, XYTo,currentBoard) {
-    currentBoard.moves.push(XYToChess(XYFrom,XYTo,currentBoard));
+    updateChessMovesList(currentBoard,{XYFrom:XYFrom,XYTo:XYTo});
     movePiece(XYFrom,XYTo,currentBoard);
     
     changeSide(currentBoard);
@@ -263,23 +231,23 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
     function enPassent(obj1) {
         obj1 = inputToXY(obj1);
 
-        let lastMove = currentBoard.moves.length != 0 ? ChessToXY(currentBoard.moves[currentBoard.moves.length-1]) : {x:-1,y:-1};
+        let lastMove = currentBoard.moves.length != 0 ? currentBoard.moves[currentBoard.moves.length-1] : {XYFrom: {x:-1,y:-1},XYTo: {x:-1,y:-1},piece:""};
         //Check if target square is refering to the last move
-        if (obj1.x != lastMove.x || obj1.y != lastMove.y + (Col == 1? 1: -1)) {
+        if (obj1.x != lastMove.XYTo.x || obj1.y != lastMove.XYTo.y + (Col == 1? 1: -1)) {
             return false;
         }
         //See if this is the firstTime the target pawn has moved
         for (let i = Col == 1? 0 : 1; i < currentBoard.moves.length; i += 2) {
-            if (currentBoard.moves[i] == XYToChess({x:lastMove.x, y:lastMove.y},obj1,currentBoard)) {
+            if (currentBoard.moves[i].XYTo.x == lastMove.XYTo.x && currentBoard.moves[i].XYTo.y == lastMove.XYTo.y && currentBoard.moves[i].piece == lastMove.piece && currentBoard.moves[i].XYFrom.x == lastMove.XYFrom.x && currentBoard.moves[i].XYFrom.y == lastMove.XYFrom.y) {
                 return false;
             }
         }
         if (Col == 1) {
-            if (pos.y == 4 && obj1.y - 1 == pos.y && Math.abs(lastMove.x-pos.x) == 1) {
+            if (pos.y == 4 && obj1.y - 1 == pos.y && Math.abs(lastMove.XYTo.x-pos.x) == 1) {
                 return true; //White
             } 
         } else if (Col == 2) {
-            if (pos.y == 3 && obj1.y + 1 == pos.y && Math.abs(lastMove.x-pos.x) == 1) {
+            if (pos.y == 3 && obj1.y + 1 == pos.y && Math.abs(lastMove.XYTo.x-pos.x) == 1) {
                 return true; //Black
             } 
         }

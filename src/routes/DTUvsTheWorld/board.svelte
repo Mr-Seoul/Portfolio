@@ -3,14 +3,14 @@
     import { onMount } from "svelte";
     import {resetPiece} from "$lib/DTUvsTheWorld";
     import { tick } from "svelte";
-    import {movePiece,MakeMove,getSide,inputToIndex,inputToXY,getColour, indexToXY,XYToIndex, XYToChess,ChessToXY,getTile,setTile,incrementTurn,changeSide,getLegalMoves, inCheck} from "$lib/Chess";
+    import {updateChessMovesList,movePiece,MakeMove,getSide,inputToIndex,inputToXY,getColour, indexToXY,XYToIndex,getTile,setTile,incrementTurn,changeSide,getLegalMoves, inCheck} from "$lib/Chess";
 
     let board = $state({
         //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
         state: [],
         moves: [],
         side: 1, //1 = white, 2 = black
-        turn: 1
+        turn: 1,
     } );
 
     let highlight = $state({
@@ -72,7 +72,8 @@
         pawnPromoting = false;
         previousSelectedPosition = XYFrom;
         //Hacky Way to add the promotion type to notation.
-        board.moves[board.moves.length -1] += promotion.toUpperCase();
+        board.moves[board.moves.length -1].promotionPiece = promotion;
+        board.moves[board.moves.length -1].notation += promotion.toUpperCase();
     }
 
     function MakeFinalMove(XYFrom,XYTo,updateLegalMoves) {
@@ -141,10 +142,10 @@
                     if (getNumLegalMoves() == 0) {
                         if (inCheck(board,getSide(board))) {
                             gameResult = getSide(board) == 1 ? 2 : 1;
-                            board.moves.push(getSide(board) == 1 ? "0-1" : "1-0");
+                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"});
                         } else {
                             gameResult = 0.5;
-                            board.moves.push("0.5-0.5");
+                            updateChessMovesList(board, {notation : "0.5-0.5"});
                         }
                         resetHightlight();
                     }
@@ -268,8 +269,8 @@
                 <div style="display:flex;"><button in:fly={{x:-25, duration:2000, opacity:0,delay:2000}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
                 <button key={board.turn} style="background-color: {board.turn >= 40 ? 'lightgray' : 'dimgray'}" 
                     in:fly={{x:-25, duration:2000, opacity:0, delay:2000}} 
-                    onclick={() => {if (board.turn >= 40) {board.moves.push("0.5-0.5"); gameResult = 0.5;}}}>
-                Offer Draw</button></div>
+                    onclick={() => {if (board.turn >= 40) {updateChessMovesList(board, {notation : "0.5-0.5"}); gameResult = 0.5;}}}>
+                    Offer Draw</button></div>
             </div>
         </div>
         <div in:fade= {{duration:200}} style="background: lightgray; border-radius:20px; justify-self:center; width:200px;">
@@ -277,9 +278,9 @@
             <div style="overflow-y: scroll;height:63vh;">
                 {#each board.moves as _,index}
                     {#if board.moves.length > 2*index  + 1}
-                        <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} {board.moves[index*2+1]} </p>
+                        <p style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2].notation} {board.moves[index*2+1].notation} </p>
                     {:else if board.moves.length >= 2*index + 1}
-                        <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2]} </p>
+                        <p in:fade= {{duration:50}} style="background: darkgray;box-shadow: 0px 3px 1px rgb(0,0,0,0.25);">{ index + 1 }. {board.moves[index*2].notation} </p>
                     {/if}
                 {/each}
             </div>
