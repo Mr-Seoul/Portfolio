@@ -40,9 +40,64 @@ export function XYToIndex(XY) {
     return XY.x +XY.y*8
 }
 
+//
+export function checkDirforPiece(currentboard,startSquare,dir, piece) {
+    let information = {count: 0, pieces: []};
+    let currentSquare = {x:startSquare.x,y:startSquare.y};
+
+    startSquare = inputToXY(startSquare);
+    dir = inputToXY(dir);
+    currentSquare.x += dir.x;
+    currentSquare.y += dir.y;
+
+    while (inBoard(currentSquare) && (isEmpty(currentboard,currentSquare))) {
+        if (getTile(currentSquare,currentboard) == piece) {
+            information.count += 1;
+            information.pieces.push(currentSquare);
+        }
+        currentSquare.x += dir.x;
+        currentSquare.y += dir.y;
+    }
+
+    if (inBoard(currentSquare)) {
+        if (getTile(currentSquare,currentboard) == piece) {
+            information.count += 1;
+            information.pieces.push(currentSquare);
+        }
+    }
+    return information;
+}
+
+export function checkSquareforPiece(currentboard,piece,targetSquare) {
+    let information = {count: 0, pieces: []};
+
+    if (inBoard(targetSquare)) {
+        if (getTile(targetSquare,currentboard) == piece) {
+            information.count += 1;
+            information.pieces.push(targetSquare);
+        }
+    }
+    return information;
+}
+
+function mergeByValueUnique(arr1, arr2) {
+    const seen = new Set();
+    const result = [];
+  
+    // Safely iterate over both arrays, even if they're empty
+    for (const obj of (arr1 || []).concat(arr2 || [])) {
+      const key = JSON.stringify(obj); // assumes flat object comparison
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(obj);
+      }
+    }
+    return result;
+}
+
 export function updateChessMovesList(currentBoard, obj) {
     //Have all keys present, even if they are not relevant
-    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, promotionPiece: ""};
+    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, capturedpiece: "", promotionPiece: ""};
     if (obj.hasOwnProperty('notation')) {
         SaveObj.notation = obj.notation;
         currentBoard.moves.push(SaveObj);
@@ -86,11 +141,13 @@ export function updateChessMovesList(currentBoard, obj) {
             }
             return result;
         }
-        let pieceLetter = getTile(XYFrom,currentBoard).toLowerCase() == "p" ? "" : getTile(XYFrom,currentBoard).toUpperCase();
+        let curPiece = getTile(XYFrom,currentBoard)
+        let pieceLetter = curPiece.toLowerCase() == "p" ? "" : curPiece.toUpperCase();
         let toFile = XYToFile(XYTo);
-        let fromFile = getTile(XYFrom,currentBoard).toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
+        let fromFile = curPiece.toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
         let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
         let enemyCheckLetter = "";
+        let disambiguationLetters = "";
         //En passent logic
         if (getTile(XYFrom,currentBoard).toLowerCase() == "p") {
             let Col = getColour(XYFrom,currentBoard);
@@ -103,22 +160,88 @@ export function updateChessMovesList(currentBoard, obj) {
         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
         movePiece(XYFrom,XYTo,hypotheticalBoard);
         if (inCheck(hypotheticalBoard,getSide(hypotheticalBoard) == 1? 2 : 1)) {
-            console.log(hypotheticalBoard);
             enemyCheckLetter = "+";
         }
         //Piece disambiguation (check if the target square can be reached by two pieces, except for pawns as they always have this (already implemented))
 
-        //First check how many pieces can reach the target. Of these, check which are in the same file and or rank.
-        //Include the information that differs from the piece we want to move.
-        //First add the file, then rank (only the ones that are relevant)
+        let count = 0;
+        let allPieces = [];
 
-        let notationstring = pieceLetter + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
-        console.log(notationstring)
+        if (curPiece.toLowerCase() == "r" || curPiece.toLowerCase() == "q") {
+            let dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:0},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:0},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:0,y:1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:0,y:-1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+        }
+        if (curPiece.toLowerCase() == "b" || curPiece.toLowerCase() == "q") {
+            let dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:-1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+            
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:-1},curPiece,XYFrom);
+            count += dirinformation.count;
+            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+        }
+        if (curPiece.toLowerCase() == "n") {
+            let moveSwayN = [-1,1];
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    let dirinformation = checkSquareforPiece(currentBoard,curPiece,{x:XYTo.x+moveSwayN[i]*1,y:XYTo.y+moveSwayN[j]*2});
+                    count += dirinformation.count;
+                    allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+
+                    dirinformation = checkSquareforPiece(currentBoard,curPiece,{x:XYTo.x+moveSwayN[i]*2,y:XYTo.y+moveSwayN[j]*1});
+                    count += dirinformation.count;
+                    allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+                }
+            } 
+        }
+        if (count > 1) {
+            //Now check if all pieces have unique files and ranks. 
+            // If the files are not unique and ranks are not unique, report the both. Otherwise only report the unique one
+            allPieces = allPieces.filter(obj => !(obj.x == XYFrom.x && obj.y == XYFrom.y));
+            let Xunique = !allPieces.some(obj => obj.x == XYFrom.x);
+            let Yunique = !allPieces.some(obj => obj.y == XYFrom.y);
+            console.log(XYFrom,allPieces,Xunique,Yunique)
+            if (!Xunique && !Yunique) {
+                disambiguationLetters += XYToFile(XYFrom) + (XYFrom.y + 1);
+            }
+            else {
+                if (Xunique) {
+                    disambiguationLetters += XYToFile(XYFrom);
+                }
+                else {
+                    disambiguationLetters += (XYFrom.y + 1);
+                }
+            }
+        }
+
+        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
         SaveObj.XYFrom = obj.XYFrom;
         SaveObj.XYTo = obj.XYTo;
         SaveObj.capture = getTile(XYTo,currentBoard) != "";
         SaveObj.piece = getTile(XYFrom,currentBoard);
         SaveObj.notation = notationstring;
+        SaveObj.capturedpiece = getTile(XYTo,currentBoard);
 
         currentBoard.moves.push(SaveObj);
     }
@@ -165,6 +288,18 @@ export function MakeMove(XYFrom, XYTo,currentBoard) {
     incrementTurn(currentBoard);
 }
 
+export function inBoard(obj1) {
+    obj1 = inputToXY(obj1);
+
+    return (obj1.x > -1 && obj1.y > -1 && obj1.x < 8 && obj1.y < 8);
+}
+
+export function isEmpty(currentBoard,input1) {
+    input1 = inputToXY(input1);
+    
+    return (getTile(input1,currentBoard) == "");
+}
+
 export function getLegalMoves(index,currentBoard,checkForCheck) {
     index = inputToIndex(index);
 
@@ -186,12 +321,6 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         return (getColour(obj1,currentBoard)) != getColour(obj2,currentBoard);
     }
 
-    function inBoard(obj1) {
-        obj1 = inputToXY(obj1);
-
-        return (obj1.x > -1 && obj1.y > -1 && obj1.x < 8 && obj1.y < 8);
-    }
-
     function isOpponent(obj1) {
         obj1 = inputToXY(obj1);
         return getColour(obj1,currentBoard) == (Col == 1 ? 2 : 1);
@@ -209,9 +338,15 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         return !inCheck(hypotheticalBoard,Col);
     }
 
+    function isEmptyorOpponent(input1) {
+        input1 = inputToXY(input1);
+        
+        return (isEmpty(currentBoard,input1) || differentColour(pos,input1));
+        
+    }
     function addLegalMove(obj1) {
         obj1 = inputToXY(obj1);
-        if (inBoard(obj1) && isEmptyorOpponent(obj1,currentBoard) && notInCheck(obj1,currentBoard)) {
+        if (inBoard(obj1) && isEmptyorOpponent(obj1) && notInCheck(obj1,currentBoard)) {
             
             legalMoves.push(obj1);
             
@@ -254,26 +389,13 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         return false;
     }
 
-    function isEmpty(input1) {
-        input1 = inputToXY(input1);
-        
-        return (getTile(input1,currentBoard) == "");
-    }
-
-    function isEmptyorOpponent(input1) {
-        input1 = inputToXY(input1);
-        
-        return (isEmpty(input1) || differentColour(pos,input1));
-        
-    }
-
     function checkDirection(startSquare, dir) {
         startSquare = inputToXY(startSquare);
         dir = inputToXY(dir);
         let currentSquare = {x:startSquare.x,y:startSquare.y};
         currentSquare.x += dir.x;
         currentSquare.y += dir.y;
-        while (inBoard(currentSquare) && isEmpty(currentSquare)) {
+        while (inBoard(currentSquare) && isEmpty(currentBoard,currentSquare)) {
             addLegalMove({x:currentSquare.x,y:currentSquare.y});
             currentSquare.x += dir.x;
             currentSquare.y += dir.y;
@@ -289,7 +411,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         let currentSquare = {x:input1.x + dir.x, y:input1.y+dir.y}
 
         //Check if it is an opponent square
-        if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
+        if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentBoard,currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
             legalMoves.push(input1);
             return legalMoves;
         }
@@ -303,12 +425,12 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         currentSquare.x += dir.x;
         currentSquare.y += dir.y;
         //Move to next square that isn't empty
-        while (inBoard(currentSquare) && isEmpty(currentSquare)) {
+        while (inBoard(currentSquare) && isEmpty(currentBoard,currentSquare)) {
             currentSquare.x += dir.x;
             currentSquare.y += dir.y;
         }
         //Check if it is an opponent square
-        if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
+        if (inBoard(currentSquare) && !isOpponent(currentSquare) && !isEmpty(currentBoard,currentSquare) && pieces.includes(getTile(currentSquare,currentBoard))) {
             legalMoves.push(startSquare);
             return legalMoves;
         }
@@ -318,25 +440,25 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         //Pawns
         case "p":
             let direction = (Col == 1? 1 : -1);
-            if (isEmpty({x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {
+            if (isEmpty(currentBoard,{x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {
                 addLegalMove({x:X+1,y:Y+direction});
             }
-            if (isEmpty({x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
+            if (isEmpty(currentBoard,{x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
                 addLegalMove({x:X-1,y:Y+direction});
             }
-            if (isEmpty({x:X,y:Y+direction*2},currentBoard) && firstMove()) {
+            if (isEmpty(currentBoard,{x:X,y:Y+direction*2},currentBoard) && firstMove()) {
                 addLegalMove({x:X,y:Y+direction*2});
             }
-            if (isEmpty({x:X,y:Y+direction})) {
+            if (isEmpty(currentBoard,{x:X,y:Y+direction})) {
                 addLegalMove({x:X,y:Y+direction});
             }
             if (X>0) {
-                if (! isEmpty({x:X-1,y:Y+direction*1})) {
+                if (! isEmpty(currentBoard,{x:X-1,y:Y+direction*1})) {
                     addLegalMove({x:X-1,y:Y+direction*1},currentBoard);
                 }
             }
             if (X<7) {
-                if (! isEmpty({x:X+1,y:Y+direction*1})) {
+                if (! isEmpty(currentBoard,{x:X+1,y:Y+direction*1})) {
                     addLegalMove({x:X+1,y:Y+direction*1});
                 }
             }
