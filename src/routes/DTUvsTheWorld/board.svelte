@@ -10,7 +10,7 @@
         state: [],
         moves: [],
         side: 1, //1 = white, 2 = black
-        turn: 1,
+        turn: 1
     } );
 
     let highlight = $state({
