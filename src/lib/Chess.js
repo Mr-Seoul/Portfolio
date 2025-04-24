@@ -152,6 +152,7 @@ export function updateChessMovesList(currentBoard, obj) {
             }
             return result;
         }
+
         let curPiece = getTile(XYFrom,currentBoard)
         let pieceLetter = curPiece.toLowerCase() == "p" ? "" : curPiece.toUpperCase();
         let toFile = XYToFile(XYTo);
@@ -159,12 +160,23 @@ export function updateChessMovesList(currentBoard, obj) {
         let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
         let enemyCheckLetter = "";
         let disambiguationLetters = "";
+        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
+
+        SaveObj.XYFrom = obj.XYFrom;
+        SaveObj.XYTo = obj.XYTo;
+        SaveObj.capture = getTile(XYTo,currentBoard) != "";
+        SaveObj.piece = curPiece;
+        SaveObj.notation = notationstring;
+        SaveObj.capturedpiece = getTile(XYTo,currentBoard);
+
         //En passent logic
         if (curPiece.toLowerCase() == "p") {
             let Col = getColour(XYFrom,currentBoard);
             let dir = Col == 1 ? -1 : 1;
             if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
                 captureLetter = "x";
+                SaveObj.capturedpiece = curPiece == 'p'? 'P' : 'p';
+                SaveObj.capture = true
             }
         }
         //Enemy in check Logic (for plus at end of notation)
@@ -232,7 +244,6 @@ export function updateChessMovesList(currentBoard, obj) {
             allPieces = allPieces.filter(obj => !(obj.x == XYFrom.x && obj.y == XYFrom.y));
             let Xunique = !allPieces.some(obj => obj.x == XYFrom.x);
             let Yunique = !allPieces.some(obj => obj.y == XYFrom.y);
-            console.log(XYFrom,allPieces,Xunique,Yunique)
             if (!Xunique && !Yunique) {
                 disambiguationLetters += XYToFile(XYFrom) + (XYFrom.y + 1);
             }
@@ -247,43 +258,33 @@ export function updateChessMovesList(currentBoard, obj) {
         }
         //King and rook movement data:
         if (curPiece == "k") {
-            SaveObj.BKmove = true
+            SaveObj.BKmove = true;
         } else if (curPiece == "K") {
-            SaveObj.WKmove = true
+            SaveObj.WKmove = true;
         } else if (curPiece == "r") {
             if (XYFrom.x == 7 && XYFrom.y == 7) {
-                SaveObj.BRQmove = true
+                SaveObj.BRQmove = true;
             } else if (XYFrom.x == 0 && XYFrom.y == 7) {
-                SaveObj.BRKmove = true
+                SaveObj.BRKmove = true;
             }
         } else if (curPiece == "R") {
             if (XYFrom.x == 7 && XYFrom.y == 0) {
-                SaveObj.WRQmove = true
+                SaveObj.WRQmove = true;
             } else if (XYFrom.x == 0 && XYFrom.y == 0) {
-                SaveObj.WRKmove = true
+                SaveObj.WRKmove = true;
             }
         }
-
-        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
         
         //Castling Logic
         if (curPiece.toLowerCase() == "k") {
             if (Math.abs(XYFrom.x - XYTo.x) == 2) { //Check if castled
-                console.log(XYTo,XYFrom)
                 if (XYTo.x == 1) { //Kingside Castle
-                    notationstring = "O-O"
+                    notationstring = "O-O";
                 } else if (XYTo.x == 5) { //Queenside Castle
-                    notationstring = "O-O-O"
+                    notationstring = "O-O-O";
                 }
             }
         }
-        
-        SaveObj.XYFrom = obj.XYFrom;
-        SaveObj.XYTo = obj.XYTo;
-        SaveObj.capture = getTile(XYTo,currentBoard) != "";
-        SaveObj.piece = curPiece;
-        SaveObj.notation = notationstring;
-        SaveObj.capturedpiece = getTile(XYTo,currentBoard);
 
         currentBoard.moves.push(SaveObj);
     }
@@ -320,7 +321,6 @@ export function movePiece(XYFrom, XYTo,currentBoard) {
     }
     //If castling, move the rook to the center square next to the king
     if (Math.abs(XYFrom.x - XYTo.x) == 2) {
-        console.log(XYTo,XYFrom);
         if (XYTo.x == 1) { //Kingside Castle
             setTile({x:2,y:XYTo.y},getTile({x:0,y:XYTo.y},currentBoard),currentBoard)
             setTile({x:0,y:XYTo.y},"",currentBoard)
