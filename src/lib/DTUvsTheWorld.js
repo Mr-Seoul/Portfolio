@@ -1,7 +1,7 @@
 export const resetPiece = (piece) => {
     let src = "";
     switch(piece) {
-                case "":
+                case " ":
                     src = "assets/DTUvsTheWorld/Empty.png";
                     break;
                 case "P":

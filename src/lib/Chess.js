@@ -23,11 +23,11 @@ export function getColour(input,currentBoard) {
         if (index < 0 || index > 63) {
             return -1;
         }
-        if (currentBoard.state[index] === "") {
+        if (currentBoard.state[index] == " ") {
             return 0;
-        } else if (currentBoard.state[index] === currentBoard.state[index].toUpperCase()) {
+        } else if (currentBoard.state[index] == currentBoard.state[index].toUpperCase()) {
             return 1;
-        } else if (currentBoard.state[index] === currentBoard.state[index].toLowerCase()) {
+        } else if (currentBoard.state[index] == currentBoard.state[index].toLowerCase()) {
             return 2;
         }
     }
@@ -97,7 +97,7 @@ function mergeByValueUnique(arr1, arr2) {
 
 export function updateChessMovesList(currentBoard, obj,promotion) {
     //Have all keys present, even if they are not relevant
-    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, capturedpiece: "", promotionPiece: "",BKmove: false,BRQmove: false,BRKmove: false,WKmove: false, WRQmove: false,WRKmove: false};
+    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: " ",capture: false, capturedpiece: " ", promotionPiece: " ",BKmove: false,BRQmove: false,BRKmove: false,WKmove: false, WRQmove: false,WRKmove: false};
     if (currentBoard.moves.length > 0) {
         let PrevMove = currentBoard.moves.length - 1
     
@@ -154,10 +154,10 @@ export function updateChessMovesList(currentBoard, obj,promotion) {
         }
 
         let curPiece = getTile(XYFrom,currentBoard)
-        let pieceLetter = curPiece.toLowerCase() == "p" ? "" : curPiece.toUpperCase();
+        let pieceLetter = curPiece.toLowerCase() == "p" ? " " : curPiece.toUpperCase();
         let toFile = XYToFile(XYTo);
         let fromFile = curPiece.toLowerCase() == "p" && toFile != XYToFile(XYFrom) ? XYToFile(XYFrom) : "";
-        let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
+        let captureLetter = (getTile(XYTo,currentBoard) == " ") ? "" : "x";
         let enemyCheckLetter = "";
         let disambiguationLetters = "";
         let promotionletter = promotion.toUpperCase();
@@ -165,7 +165,7 @@ export function updateChessMovesList(currentBoard, obj,promotion) {
 
         SaveObj.XYFrom = obj.XYFrom;
         SaveObj.XYTo = obj.XYTo;
-        SaveObj.capture = getTile(XYTo,currentBoard) != "";
+        SaveObj.capture = getTile(XYTo,currentBoard) != " ";
         SaveObj.piece = curPiece;
         SaveObj.notation = notationstring;
         SaveObj.capturedpiece = getTile(XYTo,currentBoard);
@@ -183,7 +183,7 @@ export function updateChessMovesList(currentBoard, obj,promotion) {
         }
         //Enemy in check Logic (for plus at end of notation)
         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-        movePiece(XYFrom,XYTo,hypotheticalBoard,"");
+        movePiece(XYFrom,XYTo,hypotheticalBoard," ");
         if (inCheck(hypotheticalBoard,getSide(hypotheticalBoard) == 1? 2 : 1)) {
             enemyCheckLetter = "+";
         }
@@ -298,26 +298,26 @@ export function movePiece(XYFrom, XYTo,currentBoard,promotion) {
     //if en passent also remove piece above:
     //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
     let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
-    if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard) == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
-        setTile({x:XYTo.x,y:XYTo.y + dir}, "",currentBoard);
+    if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard) == " " && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
+        setTile({x:XYTo.x,y:XYTo.y + dir}, " ",currentBoard);
     }
     //If castling, move the rook to the center square next to the king
     if (Math.abs(XYFrom.x - XYTo.x) == 2) {
         if (XYTo.x == 1) { //Kingside Castle
             setTile({x:2,y:XYTo.y},getTile({x:0,y:XYTo.y},currentBoard),currentBoard)
-            setTile({x:0,y:XYTo.y},"",currentBoard)
+            setTile({x:0,y:XYTo.y}," ",currentBoard)
         } else if (XYTo.x == 5) { //Queenside Castle
             setTile({x:4,y:XYTo.y},getTile({x:7,y:XYTo.y},currentBoard),currentBoard)
-            setTile({x:7,y:XYTo.y},"",currentBoard)
+            setTile({x:7,y:XYTo.y}," ",currentBoard)
         }
     }
-    if (promotion != "") {
+    if (promotion != " ") {
         setTile(XYTo,promotion,currentBoard);
     } else {
         setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
     }
     
-    setTile(XYFrom,"",currentBoard);
+    setTile(XYFrom," ",currentBoard);
 }
 
 export function MakeMove(XYFrom, XYTo,currentBoard,promotion) {
@@ -337,7 +337,7 @@ export function inBoard(obj1) {
 export function isEmpty(currentBoard,input1) {
     input1 = inputToXY(input1);
     
-    return (getTile(input1,currentBoard) == "");
+    return (getTile(input1,currentBoard) == " ");
 }
 
 export function getLegalMoves(index,currentBoard,checkForCheck) {
@@ -346,7 +346,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
     if (! inBoard(index)) { 
         return [];  //Return empty array if square is off the board
     }
-    if (currentBoard.state[index] == "") {
+    if (currentBoard.state[index] == " ") {
         return []; //Return empty array if the square is empty
     }
     let legalMoves = [];
@@ -374,7 +374,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         obj1 = inputToXY(obj1);
         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));         
         //Move own piece
-        MakeMove(pos, obj1, hypotheticalBoard,"");   
+        MakeMove(pos, obj1, hypotheticalBoard," ");   
         return !inCheck(hypotheticalBoard,Col);
     }
 
@@ -406,7 +406,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
     function enPassent(obj1) {
         obj1 = inputToXY(obj1);
 
-        let lastMove = currentBoard.moves.length != 0 ? currentBoard.moves[currentBoard.moves.length-1] : {XYFrom: {x:-1,y:-1},XYTo: {x:-1,y:-1},piece:""};
+        let lastMove = currentBoard.moves.length != 0 ? currentBoard.moves[currentBoard.moves.length-1] : {XYFrom: {x:-1,y:-1},XYTo: {x:-1,y:-1},piece:" "};
         //Check if target square is refering to the last move
         if (obj1.x != lastMove.XYTo.x || obj1.y != lastMove.XYTo.y + (Col == 1? 1: -1)) {
             return false;
@@ -612,8 +612,12 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
 
         //Check straight directions
-        for (let dir of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1},{x:1,y:1},{x:1,y:-1},{x:-1,y:1},{x:-1,y:-1}]) {
+        for (let dir of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]) {
             checkKingDirection(kingPos,dir,[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
+        }
+        //Check diagonal directions
+        for (let dir of [{x:1,y:1},{x:1,y:-1},{x:-1,y:1},{x:-1,y:-1}]) {
+            checkKingDirection(kingPos,dir,[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
         }
 
         //Check for knights

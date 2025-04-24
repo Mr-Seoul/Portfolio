@@ -7,7 +7,7 @@
         time = 200,
         index= -1,
         delay = 0,
-        piece = "",
+        piece = " ",
         highlighted = false,
         prevTile = {x:-1,y:-1}
     } = $props();

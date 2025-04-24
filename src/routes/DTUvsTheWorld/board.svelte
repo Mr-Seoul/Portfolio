@@ -83,10 +83,10 @@
         currentBoard.state = [];
         currentBoard.state.push("R","N","B", "K", "Q", "B", "N", "R",
                      "P","P","P", "P", "P", "P", "P", "P",
-                     "","","", "", "", "", "", "",
-                     "","","", "", "", "", "", "",
-                     "","","", "", "", "", "", "",
-                     "","","", "", "", "", "", "",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
                      "p","p","p", "p", "p", "p", "p", "p",
                      "r","n","b", "k", "q", "b", "n", "r");
         currentBoard.moves = [];
@@ -131,10 +131,10 @@
                     if (getNumLegalMoves() == 0) {
                         if (inCheck(board,getSide(board))) {
                             gameResult = getSide(board) == 1 ? 2 : 1;
-                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"},"");
+                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"}," ");
                         } else {
                             gameResult = 0.5;
-                            updateChessMovesList(board, {notation : "0.5-0.5"},"");
+                            updateChessMovesList(board, {notation : "0.5-0.5"}," ");
                         }
                         resetHightlight();
                     }
@@ -192,10 +192,10 @@
                 SavedTileposition = tilePosition;
                 
             } else {
-                MakeFinalMove(selectedPosition,tilePosition,true,"");
+                MakeFinalMove(selectedPosition,tilePosition,true," ");
             }
 
-        } else if (getTile(tilePosition,board) == "") {
+        } else if (getTile(tilePosition,board) == " ") {
             selectedPosition = {x:-1,y:-1};
             resetHightlight();
         }
