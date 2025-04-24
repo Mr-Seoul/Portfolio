@@ -51,6 +51,7 @@
             hasPiece = true;
         }, 0);
     })
+    
     function animationDistance() {
         if (prevTile.x == -1 && prevTile.y == -1) {
             return {x:0,y:0}

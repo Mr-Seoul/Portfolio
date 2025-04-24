@@ -95,7 +95,7 @@ function mergeByValueUnique(arr1, arr2) {
     return result;
 }
 
-export function updateChessMovesList(currentBoard, obj) {
+export function updateChessMovesList(currentBoard, obj,promotion) {
     //Have all keys present, even if they are not relevant
     let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, capturedpiece: "", promotionPiece: "",BKmove: false,BRQmove: false,BRKmove: false,WKmove: false, WRQmove: false,WRKmove: false};
     if (currentBoard.moves.length > 0) {
@@ -160,7 +160,8 @@ export function updateChessMovesList(currentBoard, obj) {
         let captureLetter = (getTile(XYTo,currentBoard) == "") ? "" : "x";
         let enemyCheckLetter = "";
         let disambiguationLetters = "";
-        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
+        let promotionletter = promotion.toUpperCase();
+        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter + promotionletter
 
         SaveObj.XYFrom = obj.XYFrom;
         SaveObj.XYTo = obj.XYTo;
@@ -168,6 +169,7 @@ export function updateChessMovesList(currentBoard, obj) {
         SaveObj.piece = curPiece;
         SaveObj.notation = notationstring;
         SaveObj.capturedpiece = getTile(XYTo,currentBoard);
+        SaveObj.promotionPiece = promotion;
 
         //En passent logic
         if (curPiece.toLowerCase() == "p") {
@@ -176,17 +178,17 @@ export function updateChessMovesList(currentBoard, obj) {
             if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
                 captureLetter = "x";
                 SaveObj.capturedpiece = curPiece == 'p'? 'P' : 'p';
-                SaveObj.capture = true
+                SaveObj.capture = true;
             }
         }
         //Enemy in check Logic (for plus at end of notation)
         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-        movePiece(XYFrom,XYTo,hypotheticalBoard);
+        movePiece(XYFrom,XYTo,hypotheticalBoard,"");
         if (inCheck(hypotheticalBoard,getSide(hypotheticalBoard) == 1? 2 : 1)) {
             enemyCheckLetter = "+";
         }
-        //Piece disambiguation (check if the target square can be reached by two pieces, except for pawns as they always have this (already implemented))
 
+        //Piece disambiguation (check if the target square can be reached by two pieces, except for pawns as they always have this (already implemented))
         let count = 0;
         let allPieces = [];
 
@@ -292,7 +294,7 @@ export function incrementTurn(currentBoard) {
     }
 }
 
-export function movePiece(XYFrom, XYTo,currentBoard) {
+export function movePiece(XYFrom, XYTo,currentBoard,promotion) {
     //if en passent also remove piece above:
     //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
     let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
@@ -309,13 +311,18 @@ export function movePiece(XYFrom, XYTo,currentBoard) {
             setTile({x:7,y:XYTo.y},"",currentBoard)
         }
     }
-    setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
+    if (promotion != "") {
+        setTile(XYTo,promotion,currentBoard);
+    } else {
+        setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
+    }
+    
     setTile(XYFrom,"",currentBoard);
 }
 
-export function MakeMove(XYFrom, XYTo,currentBoard) {
-    updateChessMovesList(currentBoard,{XYFrom:XYFrom,XYTo:XYTo});
-    movePiece(XYFrom,XYTo,currentBoard);
+export function MakeMove(XYFrom, XYTo,currentBoard,promotion) {
+    updateChessMovesList(currentBoard,{XYFrom:XYFrom,XYTo:XYTo},promotion);
+    movePiece(XYFrom,XYTo,currentBoard,promotion);
     
     changeSide(currentBoard);
     incrementTurn(currentBoard);
@@ -367,7 +374,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         obj1 = inputToXY(obj1);
         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));         
         //Move own piece
-        MakeMove(pos, obj1, hypotheticalBoard);   
+        MakeMove(pos, obj1, hypotheticalBoard,"");   
         return !inCheck(hypotheticalBoard,Col);
     }
 

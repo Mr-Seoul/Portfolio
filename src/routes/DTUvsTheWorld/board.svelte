@@ -61,33 +61,22 @@
         await tick(); 
     }
 
-    function MoveAndPromotePawn(XYFrom,XYTo,promotion) {
+    function MakeFinalMove(XYFrom,XYTo,updateLegalMoves, promotion) {
         XYFrom = inputToXY(XYFrom);
         XYTo = inputToXY(XYTo);
         promotion = (getSide(board) == 1 ? promotion.toUpperCase() : promotion.toLowerCase());
-
-        MakeFinalMove(XYFrom,XYTo);
-        setTile(XYTo,promotion,board,false);
-        setAllLegalMoves(board);
-        pawnPromoting = false;
-        previousSelectedPosition = XYFrom;
-        //Hacky Way to add the promotion type to notation.
-        board.moves[board.moves.length -1].promotionPiece = promotion;
-        board.moves[board.moves.length -1].notation += promotion.toUpperCase();
-    }
-
-    function MakeFinalMove(XYFrom,XYTo,updateLegalMoves) {
-        XYFrom = inputToXY(XYFrom);
-        XYTo = inputToXY(XYTo);
         
-        MakeMove(XYFrom,XYTo,board);
+        MakeMove(XYFrom,XYTo,board,promotion);
         if (updateLegalMoves) {
             setAllLegalMoves(board);
         }
         resetHightlight();
 
-        previousSelectedPosition = selectedPosition;
+        previousSelectedPosition = XYFrom;
         selectedPosition = {x:-1,y:-1};
+
+        //Promotion logic
+        pawnPromoting = false;
     }
     
     function resetBoard(currentBoard) {
@@ -142,10 +131,10 @@
                     if (getNumLegalMoves() == 0) {
                         if (inCheck(board,getSide(board))) {
                             gameResult = getSide(board) == 1 ? 2 : 1;
-                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"});
+                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"},"");
                         } else {
                             gameResult = 0.5;
-                            updateChessMovesList(board, {notation : "0.5-0.5"});
+                            updateChessMovesList(board, {notation : "0.5-0.5"},"");
                         }
                         resetHightlight();
                     }
@@ -203,7 +192,7 @@
                 SavedTileposition = tilePosition;
                 
             } else {
-                MakeFinalMove(selectedPosition,tilePosition,true);
+                MakeFinalMove(selectedPosition,tilePosition,true,"");
             }
 
         } else if (getTile(tilePosition,board) == "") {
@@ -236,10 +225,10 @@
                 {#if pawnPromoting}
                     <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
                         <div style="display:grid;grid-template-columns: auto auto auto auto; grid-template-rows: 1fr;padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'q',board);}}><img alt="" id="Queen" src={resetPiece(getSide(board)==1 ? 'Q' : 'q')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'n',board);}}><img alt="" id="Knight" src={resetPiece(getSide(board)==1 ? 'N' : 'n')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'b',board);}}><img alt="" id="Bishop" src={resetPiece(getSide(board)==1 ? 'B' : 'b')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MoveAndPromotePawn(SavedSelectedposition,SavedTileposition,'r',board);}}><img alt="" id="Rook" src={resetPiece(getSide(board)==1 ? 'R' : 'r')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"q");}}><img alt="" id="Queen" src={resetPiece(getSide(board)==1 ? 'Q' : 'q')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"n");}}><img alt="" id="Knight" src={resetPiece(getSide(board)==1 ? 'N' : 'n')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"b");}}><img alt="" id="Bishop" src={resetPiece(getSide(board)==1 ? 'B' : 'b')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"r");}}><img alt="" id="Rook" src={resetPiece(getSide(board)==1 ? 'R' : 'r')}></button>
                         </div>
                     </div>
                 {/if}
