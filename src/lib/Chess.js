@@ -97,7 +97,19 @@ function mergeByValueUnique(arr1, arr2) {
 
 export function updateChessMovesList(currentBoard, obj) {
     //Have all keys present, even if they are not relevant
-    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, capturedpiece: "", promotionPiece: ""};
+    let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: "",capture: false, capturedpiece: "", promotionPiece: "",BKmove: false,BRQmove: false,BRKmove: false,WKmove: false, WRQmove: false,WRKmove: false};
+    if (currentBoard.moves.length > 0) {
+        let PrevMove = currentBoard.moves.length - 1
+    
+        SaveObj.BKmove = currentBoard.moves[PrevMove].BKmove
+        SaveObj.BRQmove = currentBoard.moves[PrevMove].BRQmove
+        SaveObj.BRKmove = currentBoard.moves[PrevMove].BRKmove
+        SaveObj.WKmove = currentBoard.moves[PrevMove].WKmove
+        SaveObj.WRQmove = currentBoard.moves[PrevMove].WRQmove
+        SaveObj.WRKmove = currentBoard.moves[PrevMove].WRKmove
+    }
+        
+
     if (obj.hasOwnProperty('notation')) {
         SaveObj.notation = obj.notation;
         currentBoard.moves.push(SaveObj);
@@ -234,14 +246,34 @@ export function updateChessMovesList(currentBoard, obj) {
                 }
             }
         }
+        //King and rook movement data:
+        if (curPiece == "k") {
+            SaveObj.BKmove = true
+        } else if (curPiece == "K") {
+            SaveObj.WKmove = true
+        } else if (curPiece == "r") {
+            if (XYFrom.x == 7 && XYFrom.y == 7) {
+                SaveObj.BRQmove = true
+            } else if (XYFrom.x == 0 && XYFrom.y == 7) {
+                SaveObj.BRKmove = true
+            }
+        } else if (curPiece == "R") {
+            if (XYFrom.x == 7 && XYFrom.y == 0) {
+                SaveObj.WRQmove = true
+            } else if (XYFrom.x == 0 && XYFrom.y == 0) {
+                SaveObj.WRKmove = true
+            }
+        }
 
         let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
         SaveObj.XYFrom = obj.XYFrom;
         SaveObj.XYTo = obj.XYTo;
         SaveObj.capture = getTile(XYTo,currentBoard) != "";
-        SaveObj.piece = getTile(XYFrom,currentBoard);
+        SaveObj.piece = curPiece;
         SaveObj.notation = notationstring;
         SaveObj.capturedpiece = getTile(XYTo,currentBoard);
+
+        console.log(SaveObj)
 
         currentBoard.moves.push(SaveObj);
     }
