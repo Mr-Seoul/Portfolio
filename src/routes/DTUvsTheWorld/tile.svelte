@@ -24,11 +24,11 @@
 
     function setColor() {
         if ((x+y)%2==1) {
-            color = "gray";
+            color = "#D2B48C";
             sideSwipe = {x:100,y:25};
 
         } else {
-            color = "darkgray";
+            color = "#987554";
             sideSwipe = {x:-100,y:-25};
         }
     }

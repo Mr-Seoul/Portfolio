@@ -48,7 +48,7 @@ nav>button {
     height: 480px;
     margin: 0 auto;
     border-radius: 10px;
-    border: 10px solid dimgrey;
+    border: 10px solid #664229;
     justify-self: center;
 
     flex-wrap: wrap;
