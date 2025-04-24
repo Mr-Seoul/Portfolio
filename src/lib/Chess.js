@@ -191,38 +191,18 @@ export function updateChessMovesList(currentBoard, obj) {
         let allPieces = [];
 
         if (curPiece.toLowerCase() == "r" || curPiece.toLowerCase() == "q") {
-            let dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:0},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:0},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:0,y:1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:0,y:-1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+            for (let dir of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]) {
+                let dirinformation = checkDirforPiece(currentBoard,XYTo,dir,curPiece,XYFrom);
+                count += dirinformation.count;
+                allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+            }
         }
         if (curPiece.toLowerCase() == "b" || curPiece.toLowerCase() == "q") {
-            let dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:1,y:-1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-            
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
-
-            dirinformation = checkDirforPiece(currentBoard,XYTo,{x:-1,y:-1},curPiece,XYFrom);
-            count += dirinformation.count;
-            allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+            for (let dir of [{x:1,y:1},{x:1,y:-1},{x:-1,y:1},{x:-1,y:-1}]) {
+                let dirinformation = checkDirforPiece(currentBoard,XYTo,dir,curPiece,XYFrom);
+                count += dirinformation.count;
+                allPieces = mergeByValueUnique(allPieces,dirinformation.pieces);
+            }
         }
         if (curPiece.toLowerCase() == "n") {
             let moveSwayN = [-1,1];
@@ -530,18 +510,16 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
     
         //Bishops
         case "b":
-            checkDirection({x:X,y:Y},{x:1,y:1});
-            checkDirection({x:X,y:Y},{x:1,y:-1});
-            checkDirection({x:X,y:Y},{x:-1,y:1});
-            checkDirection({x:X,y:Y},{x:-1,y:-1});
+            for (let dir of [{x:1,y:1},{x:1,y:-1},{x:-1,y:1},{x:-1,y:-1}]) {
+                checkDirection({x:X,y:Y},dir);
+            }
             break;
         
         //Rook code
         case "r":
-            checkDirection({x:X,y:Y},{x:1,y:0});
-            checkDirection({x:X,y:Y},{x:-1,y:0});
-            checkDirection({x:X,y:Y},{x:0,y:1});
-            checkDirection({x:X,y:Y},{x:0,y:-1});
+            for (let dir of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]) {
+                checkDirection({x:X,y:Y},dir);
+            }
             break;
 
         //Queen code
@@ -627,26 +605,18 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
 
         //Check straight directions
-        checkKingDirection(kingPos,{x:1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
-        checkKingDirection(kingPos,{x:-1,y:0},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
-        checkKingDirection(kingPos,{x:0,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
-        checkKingDirection(kingPos,{x:0,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
-
-        //Check diagonals directions
-        checkKingDirection(kingPos,{x:1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
-        checkKingDirection(kingPos,{x:1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
-        checkKingDirection(kingPos,{x:-1,y:1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
-        checkKingDirection(kingPos,{x:-1,y:-1},[(Col==1 ? "Q":"q"),(Col==1 ? "B":"b")]);
+        for (let dir of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1},{x:1,y:1},{x:1,y:-1},{x:-1,y:1},{x:-1,y:-1}]) {
+            checkKingDirection(kingPos,dir,[(Col==1 ? "Q":"q"),(Col==1 ? "R":"r")]);
+        }
 
         //Check for knights
-        checkKingSquare(kingPos,{x:1,y:2},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:-1,y:2},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:1,y:-2},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:-1,y:-2},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:2,y:1},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:2,y:-1},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:-2,y:1},[(Col==1 ? "N":"n")]);
-        checkKingSquare(kingPos,{x:-2,y:-1},[(Col==1 ? "N":"n")]);
+        let moveSwayN = [-1,1];
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 2; j++) {
+                checkKingSquare(kingPos,{x:moveSwayN[i]*1,y:moveSwayN[j]*2},[(Col==1 ? "N":"n")]);
+                checkKingSquare(kingPos,{x:moveSwayN[i]*2,y:moveSwayN[j]*1},[(Col==1 ? "N":"n")]);
+            }
+        }
         
         //Check for pawns
         checkKingSquare(kingPos,(Col == 1 ? {x:-1,y:-1} : {x:-1,y:1}),[(Col==1 ? "P":"p")]);
