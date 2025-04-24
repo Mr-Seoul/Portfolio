@@ -108,7 +108,6 @@ export function updateChessMovesList(currentBoard, obj) {
         SaveObj.WRQmove = currentBoard.moves[PrevMove].WRQmove
         SaveObj.WRKmove = currentBoard.moves[PrevMove].WRKmove
     }
-        
 
     if (obj.hasOwnProperty('notation')) {
         SaveObj.notation = obj.notation;
@@ -161,7 +160,7 @@ export function updateChessMovesList(currentBoard, obj) {
         let enemyCheckLetter = "";
         let disambiguationLetters = "";
         //En passent logic
-        if (getTile(XYFrom,currentBoard).toLowerCase() == "p") {
+        if (curPiece.toLowerCase() == "p") {
             let Col = getColour(XYFrom,currentBoard);
             let dir = Col == 1 ? -1 : 1;
             if (getTile({x:XYTo.x,y:XYTo.y + dir},currentBoard).toLowerCase() == "p" && getTile({x: XYTo.x, y: XYTo.y + dir},currentBoard) != getTile(XYFrom,currentBoard)) {
@@ -266,14 +265,25 @@ export function updateChessMovesList(currentBoard, obj) {
         }
 
         let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter
+        
+        //Castling Logic
+        if (curPiece.toLowerCase() == "k") {
+            if (Math.abs(XYFrom.x - XYTo.x) == 2) { //Check if castled
+                console.log(XYTo,XYFrom)
+                if (XYTo.x == 1) { //Kingside Castle
+                    notationstring = "O-O"
+                } else if (XYTo.x == 5) { //Queenside Castle
+                    notationstring = "O-O-O"
+                }
+            }
+        }
+        
         SaveObj.XYFrom = obj.XYFrom;
         SaveObj.XYTo = obj.XYTo;
         SaveObj.capture = getTile(XYTo,currentBoard) != "";
         SaveObj.piece = curPiece;
         SaveObj.notation = notationstring;
         SaveObj.capturedpiece = getTile(XYTo,currentBoard);
-
-        console.log(SaveObj)
 
         currentBoard.moves.push(SaveObj);
     }
@@ -307,6 +317,17 @@ export function movePiece(XYFrom, XYTo,currentBoard) {
     let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
     if (getTile(XYFrom,currentBoard).toLowerCase() == "p" && getTile(XYTo,currentBoard) == "" && Math.abs(XYTo.x - XYFrom.x) == 1 && Math.abs(XYTo.y - XYFrom.y)) {
         setTile({x:XYTo.x,y:XYTo.y + dir}, "",currentBoard);
+    }
+    //If castling, move the rook to the center square next to the king
+    if (Math.abs(XYFrom.x - XYTo.x) == 2) {
+        console.log(XYTo,XYFrom);
+        if (XYTo.x == 1) { //Kingside Castle
+            setTile({x:2,y:XYTo.y},getTile({x:0,y:XYTo.y},currentBoard),currentBoard)
+            setTile({x:0,y:XYTo.y},"",currentBoard)
+        } else if (XYTo.x == 5) { //Queenside Castle
+            setTile({x:4,y:XYTo.y},getTile({x:7,y:XYTo.y},currentBoard),currentBoard)
+            setTile({x:7,y:XYTo.y},"",currentBoard)
+        }
     }
     setTile(XYTo,getTile(XYFrom,currentBoard),currentBoard);
     setTile(XYFrom,"",currentBoard);
@@ -472,13 +493,13 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         //Pawns
         case "p":
             let direction = (Col == 1? 1 : -1);
-            if (isEmpty(currentBoard,{x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {
+            if (isEmpty(currentBoard,{x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {//The *2 is in order to make sure that the pawn moved 2 squares last turn
                 addLegalMove({x:X+1,y:Y+direction});
             }
-            if (isEmpty(currentBoard,{x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) {
+            if (isEmpty(currentBoard,{x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) { //The *2 is in order to make sure that the pawn moved 2 squares last turn
                 addLegalMove({x:X-1,y:Y+direction});
             }
-            if (isEmpty(currentBoard,{x:X,y:Y+direction*2},currentBoard) && firstMove()) {
+            if (isEmpty(currentBoard,{x:X,y:Y+direction*2}) && isEmpty(currentBoard,{x:X,y:Y+direction}) && firstMove()) {
                 addLegalMove({x:X,y:Y+direction*2});
             }
             if (isEmpty(currentBoard,{x:X,y:Y+direction})) {
@@ -535,10 +556,65 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
 
         //King code
         case "k":
+            //Normal king moves
             let moveSwayK = [-1,0,1];
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
                     addLegalMove({x:X+moveSwayK[i],y:Y+moveSwayK[j]});
+                }
+            }
+            //Castling
+            if (!inCheck(currentBoard, Col)) {
+                // King-side castling
+                if (getTile({ x: 0, y: Y }, currentBoard).toLowerCase() == "r") {
+                    let clearPath = true;
+                    for (let i = 1; i <= 2; i++) {
+                        if (!isEmpty(currentBoard, { x: 3 - i, y: Y })) {
+                            clearPath = false;
+                            break;
+                        }
+                    }
+                    if (clearPath) {
+                        let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+                        MakeMove(pos, { x: 2, y: Y }, hypotheticalBoard); // simulate intermediate
+                        if (!inCheck(hypotheticalBoard, Col)) {
+                            hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+                            MakeMove(pos, { x: 1, y: Y }, hypotheticalBoard); 
+                            if (!inCheck(hypotheticalBoard, Col)) {
+                                if (!currentBoard.moves[currentBoard.moves.length-1].WKmove && !currentBoard.moves[currentBoard.moves.length-1].WRKmove && Col == 1) {
+                                    legalMoves.push({ x: 1, y: Y });
+                                } else if (!currentBoard.moves[currentBoard.moves.length-1].BKmove && !currentBoard.moves[currentBoard.moves.length-1].BRKmove && Col == 2) {
+                                    legalMoves.push({ x: 1, y: Y });
+                                }
+                            }
+                        }
+                    }
+                }
+            
+                // Queen-side castling 
+                if (getTile({ x: 7, y: Y }, currentBoard).toLowerCase() == "r") {
+                    let clearPath = true;
+                    for (let i = 1; i <= 3; i++) {
+                        if (!isEmpty(currentBoard, { x: 3 + i, y: Y })) {
+                            clearPath = false;
+                            break;
+                        }
+                    }
+                    if (clearPath) {
+                        let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+                        MakeMove(pos, { x: 4, y: Y }, hypotheticalBoard); // simulate intermediate
+                        if (!inCheck(hypotheticalBoard, Col)) {
+                            hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
+                            MakeMove(pos, { x: 5, y: Y }, hypotheticalBoard); 
+                            if (!inCheck(hypotheticalBoard, Col)) {
+                                if (!currentBoard.moves[currentBoard.moves.length-1].WKmove && !currentBoard.moves[currentBoard.moves.length-1].WRQmove && Col == 1) {
+                                    legalMoves.push({ x: 5, y: Y });
+                                } else if (!currentBoard.moves[currentBoard.moves.length-1].BKmove && !currentBoard.moves[currentBoard.moves.length-1].BRQmove && Col == 2) {
+                                    legalMoves.push({ x: 5, y: Y });
+                                }
+                            }
+                        }
+                    }
                 }
             }
             break;
