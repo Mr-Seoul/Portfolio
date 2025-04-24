@@ -279,9 +279,9 @@ export function updateChessMovesList(currentBoard, obj) {
         if (curPiece.toLowerCase() == "k") {
             if (Math.abs(XYFrom.x - XYTo.x) == 2) { //Check if castled
                 if (XYTo.x == 1) { //Kingside Castle
-                    notationstring = "O-O";
+                    SaveObj.notation = "O-O";
                 } else if (XYTo.x == 5) { //Queenside Castle
-                    notationstring = "O-O-O";
+                    SaveObj.notation = "O-O-O";
                 }
             }
         }
