@@ -1,4 +1,4 @@
-export function inputToIndex(input) {
+function inputToIndex(input) {
     let index = -1;
     if (typeof(input) === "number" || typeof(input) === "string") {
         index = input;
@@ -8,7 +8,7 @@ export function inputToIndex(input) {
     return index;
 }
 
-export function inputToXY(input) {
+function inputToXY(input) {
     let XY = {x:-1,y:-1};
     if (typeof(input) === "number" || typeof(input) === "string") {
         XY = indexToXY(input);
@@ -18,29 +18,30 @@ export function inputToXY(input) {
     return XY;
 }
 
-export function getColour(input,currentBoard) {
-    let index = inputToIndex(input);
-    if (index < 0 || index > 63) {
-        return -1;
+function getColour(input,currentBoard) {
+        let index = inputToIndex(input);
+        if (index < 0 || index > 63) {
+            return -1;
+        }
+        if (currentBoard.state[index] == " ") {
+            return 0;
+        } else if (currentBoard.state[index] == currentBoard.state[index].toUpperCase()) {
+            return 1;
+        } else if (currentBoard.state[index] == currentBoard.state[index].toLowerCase()) {
+            return 2;
+        }
     }
-    if (currentBoard.state[index] == " ") {
-        return 0;
-    } else if (currentBoard.state[index] == currentBoard.state[index].toUpperCase()) {
-        return 1;
-    } else if (currentBoard.state[index] == currentBoard.state[index].toLowerCase()) {
-        return 2;
-    }
-}
 
-export function indexToXY(index) {
+function indexToXY(index) {
     return {x: index%8, y:Math.floor(index/8)}
 }
 
-export function XYToIndex(XY) {
+function XYToIndex(XY) {
     return XY.x +XY.y*8
 }
 
-export function checkDirforPiece(currentboard,startSquare,dir, piece) {
+//
+function checkDirforPiece(currentboard,startSquare,dir, piece) {
     let information = {count: 0, pieces: []};
     let currentSquare = {x:startSquare.x,y:startSquare.y};
 
@@ -67,7 +68,7 @@ export function checkDirforPiece(currentboard,startSquare,dir, piece) {
     return information;
 }
 
-export function checkSquareforPiece(currentboard,piece,targetSquare) {
+function checkSquareforPiece(currentboard,piece,targetSquare) {
     let information = {count: 0, pieces: []};
 
     if (inBoard(targetSquare)) {
@@ -94,7 +95,7 @@ function mergeByValueUnique(arr1, arr2) {
     return result;
 }
 
-export function updateChessMovesList(currentBoard, obj,promotion) {
+function updateChessMovesList(currentBoard, obj,promotion) {
     //Have all keys present, even if they are not relevant
     let SaveObj = {notation: "", XYFrom: {x:-1,y: -1},XYTo: {x:-1,y: -1},piece: " ",capture: false, capturedpiece: " ", promotionPiece: " ",BKmove: false,BRQmove: false,BRKmove: false,WKmove: false, WRQmove: false,WRKmove: false};
     if (currentBoard.moves.length > 0) {
@@ -160,15 +161,6 @@ export function updateChessMovesList(currentBoard, obj,promotion) {
         let enemyCheckLetter = "";
         let disambiguationLetters = "";
         let promotionletter = promotion.toUpperCase();
-        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter + promotionletter
-
-        SaveObj.XYFrom = obj.XYFrom;
-        SaveObj.XYTo = obj.XYTo;
-        SaveObj.capture = getTile(XYTo,currentBoard) != " ";
-        SaveObj.piece = curPiece;
-        SaveObj.notation = notationstring;
-        SaveObj.capturedpiece = getTile(XYTo,currentBoard);
-        SaveObj.promotionPiece = promotion;
 
         //En passent logic
         if (curPiece.toLowerCase() == "p") {
@@ -266,34 +258,42 @@ export function updateChessMovesList(currentBoard, obj,promotion) {
                 }
             }
         }
+        let notationstring = pieceLetter + disambiguationLetters + fromFile + captureLetter + toFile + (XYTo.y+1) + enemyCheckLetter + promotionletter
+        SaveObj.XYFrom = obj.XYFrom;
+        SaveObj.XYTo = obj.XYTo;
+        SaveObj.capture = getTile(XYTo,currentBoard) != " ";
+        SaveObj.piece = curPiece;
+        SaveObj.notation = notationstring;
+        SaveObj.capturedpiece = getTile(XYTo,currentBoard);
+        SaveObj.promotionPiece = promotion;
 
         currentBoard.moves.push(SaveObj);
     }
 }
 
-export function getTile(input,currentBoard) {
+function getTile(input,currentBoard) {
     return currentBoard.state[inputToIndex(input)];
 }
 
-export function setTile(input,value,currentBoard) {
+function setTile(input,value,currentBoard) {
     currentBoard.state[inputToIndex(input)] = value;
 }
 
-export function getSide(currentBoard) {
+function getSide(currentBoard) {
     return currentBoard.side;
 }
 
-export function changeSide(currentBoard) {
+function changeSide(currentBoard) {
     currentBoard.side = currentBoard.side == 1 ? 2 : 1;
 }
 
-export function incrementTurn(currentBoard) {
+function incrementTurn(currentBoard) {
     if (currentBoard.side == 1) {
             currentBoard.turn += 1;
     }
 }
 
-export function movePiece(XYFrom, XYTo,currentBoard,promotion) {
+function movePiece(XYFrom, XYTo,currentBoard,promotion) {
     //if en passent also remove piece above:
     //Check if moved piece is pawn, moved 1 diagonally and target square is empty. Then remove piece above target
     let dir = getColour(XYFrom,currentBoard) == 1 ? -1 : 1;
@@ -319,7 +319,7 @@ export function movePiece(XYFrom, XYTo,currentBoard,promotion) {
     setTile(XYFrom," ",currentBoard);
 }
 
-export function MakeMove(XYFrom, XYTo,currentBoard,promotion) {
+function MakeMove(XYFrom, XYTo,currentBoard,promotion) {
     updateChessMovesList(currentBoard,{XYFrom:XYFrom,XYTo:XYTo},promotion);
     movePiece(XYFrom,XYTo,currentBoard,promotion);
     
@@ -327,19 +327,19 @@ export function MakeMove(XYFrom, XYTo,currentBoard,promotion) {
     incrementTurn(currentBoard);
 }
 
-export function inBoard(obj1) {
+function inBoard(obj1) {
     obj1 = inputToXY(obj1);
 
     return (obj1.x > -1 && obj1.y > -1 && obj1.x < 8 && obj1.y < 8);
 }
 
-export function isEmpty(currentBoard,input1) {
+function isEmpty(currentBoard,input1) {
     input1 = inputToXY(input1);
     
     return (getTile(input1,currentBoard) == " ");
 }
 
-export function getLegalMoves(index,currentBoard,checkForCheck) {
+function getLegalMoves(index,currentBoard,checkForCheck) {
     index = inputToIndex(index);
 
     if (! inBoard(index)) { 
@@ -406,8 +406,8 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         obj1 = inputToXY(obj1);
 
         let lastMove = currentBoard.moves.length != 0 ? currentBoard.moves[currentBoard.moves.length-1] : {XYFrom: {x:-1,y:-1},XYTo: {x:-1,y:-1},piece:" "};
-        //Check if target square is refering to the last move
-        if (obj1.x != lastMove.XYTo.x || obj1.y != lastMove.XYTo.y + (Col == 1? 1: -1)) {
+        //Check if target square is refering to the last move and that the piece is a pawn
+        if (obj1.x != lastMove.XYTo.x || obj1.y != lastMove.XYTo.y + (Col == 1? 1: -1) || getTile(lastMove.XYTo,currentBoard).toLowerCase() != "p") {
             return false;
         }
         //See if this is the firstTime the target pawn has moved
@@ -415,7 +415,8 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
             if (currentBoard.moves[i].XYTo.x == lastMove.XYTo.x && currentBoard.moves[i].XYTo.y == lastMove.XYTo.y && currentBoard.moves[i].piece == lastMove.piece && currentBoard.moves[i].XYFrom.x == lastMove.XYFrom.x && currentBoard.moves[i].XYFrom.y == lastMove.XYFrom.y) {
                 return false;
             }
-        }
+        } 
+        pos = lastMove.XYFrom;
         if (Col == 1) {
             if (pos.y == 4 && obj1.y - 1 == pos.y && Math.abs(lastMove.XYTo.x-pos.x) == 1) {
                 return true; //White
@@ -479,10 +480,10 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
         //Pawns
         case "p":
             let direction = (Col == 1? 1 : -1);
-            if (isEmpty(currentBoard,{x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction})) {//The *2 is in order to make sure that the pawn moved 2 squares last turn
+            if (isEmpty(currentBoard,{x:X+1,y:Y+direction*2}) && enPassent({x:X+1,y:Y+direction}) && (getTile({x:X+1,y:Y}, currentBoard).toLowerCase() == "p") && !isOpponent({x:X+1,y:Y}) && (isEmpty(currentBoard,{x:X+1,y:Y+direction}))) {//The *2 is in order to make sure that the pawn moved 2 squares last turn
                 addLegalMove({x:X+1,y:Y+direction});
             }
-            if (isEmpty(currentBoard,{x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction})) { //The *2 is in order to make sure that the pawn moved 2 squares last turn
+            if (isEmpty(currentBoard,{x:X-1,y:Y+direction*2}) && enPassent({x:X-1,y:Y+direction}) && (getTile({x:X-1,y:Y}, currentBoard).toLowerCase() == "p") && !isOpponent({x:X-1,y:Y}) && (isEmpty(currentBoard,{x:X+1,y:Y+direction}))) { //The *2 is in order to make sure that the pawn moved 2 squares last turn
                 addLegalMove({x:X-1,y:Y+direction});
             }
             if (isEmpty(currentBoard,{x:X,y:Y+direction*2}) && isEmpty(currentBoard,{x:X,y:Y+direction}) && firstMove()) {
@@ -492,13 +493,13 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
                 addLegalMove({x:X,y:Y+direction});
             }
             if (X>0) {
-                if (! isEmpty(currentBoard,{x:X-1,y:Y+direction*1})) {
-                    addLegalMove({x:X-1,y:Y+direction*1},currentBoard);
+                if (! isEmpty(currentBoard,{x:X-1,y:Y+direction})) {
+                    addLegalMove({x:X-1,y:Y+direction},currentBoard);
                 }
             }
             if (X<7) {
-                if (! isEmpty(currentBoard,{x:X+1,y:Y+direction*1})) {
-                    addLegalMove({x:X+1,y:Y+direction*1});
+                if (! isEmpty(currentBoard,{x:X+1,y:Y+direction})) {
+                    addLegalMove({x:X+1,y:Y+direction});
                 }
             }
             break;
@@ -560,10 +561,10 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
                     }
                     if (clearPath) {
                         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-                        MakeMove(pos, { x: 2, y: Y }, hypotheticalBoard); // simulate intermediate
+                        MakeMove(pos, { x: 2, y: Y }, hypotheticalBoard," "); // simulate intermediate
                         if (!inCheck(hypotheticalBoard, Col)) {
                             hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-                            MakeMove(pos, { x: 1, y: Y }, hypotheticalBoard); 
+                            MakeMove(pos, { x: 1, y: Y }, hypotheticalBoard," "); 
                             if (!inCheck(hypotheticalBoard, Col)) {
                                 if (!currentBoard.moves[currentBoard.moves.length-1].WKmove && !currentBoard.moves[currentBoard.moves.length-1].WRKmove && Col == 1) {
                                     legalMoves.push({ x: 1, y: Y });
@@ -586,10 +587,10 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
                     }
                     if (clearPath) {
                         let hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-                        MakeMove(pos, { x: 4, y: Y }, hypotheticalBoard); // simulate intermediate
+                        MakeMove(pos, { x: 4, y: Y }, hypotheticalBoard," "); // simulate intermediate
                         if (!inCheck(hypotheticalBoard, Col)) {
                             hypotheticalBoard = JSON.parse(JSON.stringify(currentBoard));
-                            MakeMove(pos, { x: 5, y: Y }, hypotheticalBoard); 
+                            MakeMove(pos, { x: 5, y: Y }, hypotheticalBoard," "); 
                             if (!inCheck(hypotheticalBoard, Col)) {
                                 if (!currentBoard.moves[currentBoard.moves.length-1].WKmove && !currentBoard.moves[currentBoard.moves.length-1].WRQmove && Col == 1) {
                                     legalMoves.push({ x: 5, y: Y });
@@ -636,7 +637,7 @@ export function getLegalMoves(index,currentBoard,checkForCheck) {
     return legalMoves;
 }
 
-export function inCheck(currentBoard, Col) {
+function inCheck(currentBoard, Col) {
     let Checked = false;
     const isKing = (element) => element == (Col==1? "K":"k");
     const kingPos = indexToXY(currentBoard.state.findIndex(isKing));
@@ -655,3 +656,168 @@ export function inCheck(currentBoard, Col) {
     }
     return Checked;
 }
+
+function allLegalMoves(currentBoard) {
+    let allLegalMoveslist = {};
+    for (let i = 0; i < 64; i++) {
+        if (getSide(currentBoard) == getColour(i,currentBoard)) {
+            allLegalMoveslist[JSON.stringify(i)] = getLegalMoves(i,currentBoard,true);
+        }
+    }
+    
+    return {moves:allLegalMoveslist};
+};
+
+function resetBoard(currentBoard) {
+        currentBoard.state = [];
+        currentBoard.state.push("R","N","B", "K", "Q", "B", "N", "R",
+                     "P","P","P", "P", "P", "P", "P", "P",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     " "," "," ", " ", " ", " ", " ", " ",
+                     "p","p","p", "p", "p", "p", "p", "p",
+                     "r","n","b", "k", "q", "b", "n", "r");
+        currentBoard.moves = [];
+        currentBoard.side = 1;
+        currentBoard.turn = 1;
+    }
+
+function getNumLegalMoves() {
+    let num = 0;
+    Object.values(legalMoves.moves).forEach((element) => {num+=element.length});
+    return num;
+}
+
+let currentBoard = {
+        //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
+        state: [],
+        moves: [],
+        side: 1, //1 = white, 2 = black
+        turn: 1
+    };
+
+resetBoard(currentBoard);
+let legalMoves = allLegalMoves(currentBoard)
+let gameover = false;
+
+import express from 'express';
+import cors from 'cors';
+const app = express();
+const port = 8080;
+app.use(express.json());
+let frontendAdress = "http://localhost:5173"
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error("ERROR: JSON recieved: ", err.body);
+    return res.status(400).send({ message: "Incorrect JSON syntax", received: err.body });
+  }
+  next();
+});
+
+app.get("/board", (req, res) => {
+    res.header('Access-Control-Allow-Origin', frontendAdress);
+  res.send(JSON.stringify(currentBoard));
+  console.log("GET request accepted at /board");
+});
+
+app.get("/moves", (req, res) => {
+    res.header('Access-Control-Allow-Origin', frontendAdress);
+  res.send(JSON.stringify(legalMoves));
+  console.log("GET request accepted at /moves");
+});
+
+app.post("/makemove", (req, res) => {
+    res.header('Access-Control-Allow-Origin', frontendAdress);
+    if (!gameover) {
+        let potentialmove = req.body
+        if (req.body.length > 1) {
+            console.log("Invalid POST request : (too many moves)");
+            res.status(400).send("Too many moves");
+            return;
+        }
+
+        let target = potentialmove["key"];
+        if (!(Object.hasOwn(target,"x") && Object.hasOwn(target,"y") && Object.hasOwn(target,"index") && Object.hasOwn(target,"promotion"))) {
+            console.log("Invalid POST request : (no position or promotion)");
+            res.status(400).send("invalid contents");
+            return;
+        }
+
+        let promotion = target.promotion
+        let position = {"x":target.x,"y":target.y}
+        let indexfrom = target.index;
+        console.log(legalMoves.moves[JSON.stringify(indexfrom)],position)
+        let moveincluded = false;
+        legalMoves.moves[JSON.stringify(indexfrom)].forEach((obj) => {if (obj.x == position.x && obj.y == position.y) {moveincluded = true;}})
+        if (!moveincluded) {
+            console.log("Invalid POST request : (illegal move)");
+            res.status(400).send("Illegal move");
+            return;
+        }
+        if (!(position.y == (getSide(currentBoard) == 1 ? 0 : 7) && getTile(indexToXY(Number(indexfrom)),currentBoard).toLowerCase() == "p") && promotion != " ") {
+            console.log("Invalid POST request : (illegal promotion)");
+            res.status(400).send("Illegal promotion");
+            return;
+        }
+        MakeMove(indexToXY(indexfrom),position,currentBoard,promotion);
+        legalMoves = allLegalMoves(currentBoard);
+        if (getNumLegalMoves() == 0) {
+            if (inCheck(currentBoard,getSide(currentBoard))) {
+                updateChessMovesList(currentBoard, {notation : getSide(currentBoard) == 1 ? "0-1" : "1-0"}," ");
+            } else {
+                updateChessMovesList(currentBoard, {notation : "0.5-0.5"}," ");
+            }
+            gameover = true;
+        }
+        console.log("Made move");
+        res.status(200).send("Successful move");
+        return;
+    } else {
+        console.log("Game already over");
+        res.status(400).send("Game already over");
+        return;
+    }
+    
+});
+//Add check for valid promotion (pawn on last row)
+
+app.post("/reset", (req, res) => {
+    res.header('Access-Control-Allow-Origin', frontendAdress);
+    if (gameover) {
+        resetBoard(currentBoard);
+        legalMoves = allLegalMoves(currentBoard);
+        console.log("Resetboard");
+        res.status(200).send("Successful move");
+        gameover = false;
+        return;
+    } else {
+        console.log("Game still going");
+        res.status(400).send("Game still going");
+        return;
+    }
+});
+
+app.post("/draw", (req, res) => {
+    res.header('Access-Control-Allow-Origin', frontendAdress);
+    if (!gameover && (currentBoard.turn >= 20)) {
+        updateChessMovesList(currentBoard, {notation : "0.5-0.5"}," ");
+        console.log("Game draw accepted")
+        res.status(200).send("Successful draw");
+        gameover = true;
+        return;
+    } else {
+        console.log("Game over or too early");
+        res.status(400).send("Game over or too early");
+        return;
+    }
+});
+
+app.use(cors({
+  origin: 'http://localhost:5173'
+}));
+
+app.listen(port, () => {
+  console.log("Listening at http://localhost:" + JSON.stringify(port));
+});

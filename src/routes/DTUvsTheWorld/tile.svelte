@@ -23,10 +23,9 @@
     let hasPiece = $state(true);
 
     function setColor() {
-        if ((x+y)%2==1) {
+        if ((x+y)%2==0) {
             color = "#D2B48C";
             sideSwipe = {x:100,y:25};
-
         } else {
             color = "#987554";
             sideSwipe = {x:-100,y:-25};

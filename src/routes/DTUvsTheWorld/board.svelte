@@ -3,8 +3,7 @@
     import { onMount } from "svelte";
     import {resetPiece} from "$lib/DTUvsTheWorld";
     import { tick } from "svelte";
-    import {updateChessMovesList,movePiece,MakeMove,getSide,inputToIndex,inputToXY,getColour, indexToXY,XYToIndex,getTile,setTile,incrementTurn,changeSide,getLegalMoves, inCheck} from "$lib/Chess";
-
+    import {getSide,inputToIndex,inputToXY,getColour,XYToIndex,getTile} from "$lib/Chess";
     let board = $state({
         //Pawn: P, Knight: N, Bishop: B, Rook: R, Queen: Q, King: K
         state: [],
@@ -25,6 +24,7 @@
     let previousSelectedPosition = $state({x:-1,y:-1});
     let boardFlipped = $state(true);
     let pageLoaded = $state(false);
+    let gettingresponse = false
 
     let boardObject = $state();
     let Tile = $state();
@@ -37,6 +37,8 @@
     let allLegalMoves = {};
     let calculatingLegalMoves = false;
     let w;
+
+    let APIadress = "http://localhost:8080/";
     
     function initHighlight() {
         for (let i = 0; i < 64; i++) {
@@ -61,17 +63,22 @@
         await tick(); 
     }
 
-    function MakeFinalMove(XYFrom,XYTo,updateLegalMoves, promotion) {
+    function MakeFinalMove(XYFrom,XYTo, promotion) {
         XYFrom = inputToXY(XYFrom);
         XYTo = inputToXY(XYTo);
         promotion = (getSide(board) == 1 ? promotion.toUpperCase() : promotion.toLowerCase());
-        
-        MakeMove(XYFrom,XYTo,board,promotion);
-        if (updateLegalMoves) {
-            setAllLegalMoves(board);
-        }
-        resetHightlight();
+        //Edit here to integrate API. Just call the api and then get the board state if the move is successfull.
 
+        let index = XYToIndex(XYFrom);
+        let data = JSON.stringify({ key : {"index":index,"x":XYTo.x,"y":XYTo.y,"promotion":promotion}});
+        fetch(APIadress+"makemove",{method: "POST",body: data,headers: {"Content-type": "application/json; charset=UTF-8"}}).then((res) => {
+            //If successfull move
+            if (res.status == 200) {
+                updatemoveandboard();
+            }
+        }).catch((error) => {console.error("Error in making move:", error)});
+        
+        gettingresponse = true;
         previousSelectedPosition = XYFrom;
         selectedPosition = {x:-1,y:-1};
 
@@ -79,78 +86,62 @@
         pawnPromoting = false;
     }
     
-    function resetBoard(currentBoard) {
-        currentBoard.state = [];
-        currentBoard.state.push("R","N","B", "K", "Q", "B", "N", "R",
-                     "P","P","P", "P", "P", "P", "P", "P",
-                     " "," "," ", " ", " ", " ", " ", " ",
-                     " "," "," ", " ", " ", " ", " ", " ",
-                     " "," "," ", " ", " ", " ", " ", " ",
-                     " "," "," ", " ", " ", " ", " ", " ",
-                     "p","p","p", "p", "p", "p", "p", "p",
-                     "r","n","b", "k", "q", "b", "n", "r");
-        currentBoard.moves = [];
-        currentBoard.side = 1;
-        currentBoard.turn = 1;
+    function resetBoard() {
+        fetch(APIadress+"reset",{method: "POST",headers: {"Content-type": "application/json; charset=UTF-8"}}).then((res) => {
+            //If successfull move
+            if (res.status == 200) {
+                updatemoveandboard();
+            }
+        }).catch((error) => {console.error("Error in resetting board:", error)});
         previousSelectedPosition = {x:-1,y:-1};
         selectedPosition = {x:-1,y:-1};
     }
 
-    function setAllLegalMoves(currentBoard) {
-        if (typeof(Worker) != "undefined") {
-            //Webworker support, so calculate legalmoves via another script
-            w.postMessage({"board": JSON.stringify(board)});
-            calculatingLegalMoves = true;
-        }   else {
-            //No Webworker support, so calculate legalmoves on this thread
-            allLegalMoves = {};
-            for (let i = 0; i < 64; i++) {
-                if (getSide(currentBoard) == getColour(i,currentBoard)) {
-                    allLegalMoves[JSON.stringify(i)] = getLegalMoves(i,currentBoard,true);
+    async function updatemoveandboard() {
+        fetch(APIadress+"board").then((res)=>{return res.json();})
+        .then((data)=>{
+            for (var key in data.state) {
+                if (data.state[key] != board.state[Number(key)]) {
+                    board.state[Number(key)] = data.state[key];
                 }
             }
-        }
-    }
-
-    function getNumLegalMoves() {
-        let num = 0;
-        Object.values(allLegalMoves).forEach((element) => {num+=element.length});
-        return num;
-    }
-
-    onMount(async () => {
-        try {
-            if (typeof(Worker) != "undefined") {
-                //Webworker support, so initialize webworkers
-                w = new Worker(new URL("$lib/LegalMoves.js", import.meta.url), { type: "module" });
-                w.onmessage = function(event){
-                    const {moves} = event.data;
-                    allLegalMoves = moves;
-                    calculatingLegalMoves = false;
-
-                    if (getNumLegalMoves() == 0) {
-                        if (inCheck(board,getSide(board))) {
-                            gameResult = getSide(board) == 1 ? 2 : 1;
-                            updateChessMovesList(board, {notation : getSide(board) == 1 ? "0-1" : "1-0"}," ");
-                        } else {
-                            gameResult = 0.5;
-                            updateChessMovesList(board, {notation : "0.5-0.5"}," ");
-                        }
-                        resetHightlight();
-                    }
-                };
-            }   
+            board.moves = data.moves
+            if (board.moves.length > 0) {
+                if (board.moves[board.moves.length-1].notation == "1-0") {
+                    gameResult = 1;
+                } else if (board.moves[board.moves.length-1].notation == "0-1") {
+                    gameResult = 2;
+                } else if (board.moves[board.moves.length-1].notation == "0.5-0.5") {
+                    gameResult = 0.5;
+                }
+            }
             
-            resetBoard(board);
-            initHighlight();
-            setAllLegalMoves(board);
-            const TileModule = await import("./tile.svelte");
-            Tile = TileModule.default;
-            TilesLoaded = true;
-        } catch (error) {
+            board.side = data.side
+            board.turn = data.turn;})
+        .catch((error) => {
             console.error("Error in onMount:", error);
-        }
-        pageLoaded = true;
+        });
+        //Moves
+        fetch(APIadress+"moves").then((res2) => {return res2.json();}).then((data)=> {
+            allLegalMoves = data.moves;
+            calculatingLegalMoves = false;
+            
+            resetHightlight(); 
+            pageLoaded = true;
+            gettingresponse = false
+        }).catch((error) => {
+        console.error("Error in onMount:", error);
+        });
+    }
+    
+    onMount(async () => {
+        //Board
+        initHighlight();
+        updatemoveandboard();
+
+        const TileModule = await import("./tile.svelte");
+        Tile = TileModule.default;
+        TilesLoaded = true;
     });
 
     function getBoardPosition() {
@@ -177,7 +168,9 @@
             if ( 0 <= tilePosition.x && 0<=tilePosition.y && tilePosition.x <= 7 && tilePosition.y <= 7  && getColour(tilePosition,board) == board.side){
                 if (JSON.stringify(selectedPosition) == JSON.stringify({x:-1,y:-1}) || getColour(selectedPosition,board) == getColour(tilePosition,board)) {
                     selectedPosition = tilePosition;
-                    mapHighlight(allLegalMoves[JSON.stringify(XYToIndex(tilePosition))]);
+                    if (!gettingresponse) {
+                        mapHighlight(allLegalMoves[JSON.stringify(XYToIndex(tilePosition))]);
+                    }
                 }
             }
         }
@@ -192,7 +185,7 @@
                 SavedTileposition = tilePosition;
                 
             } else {
-                MakeFinalMove(selectedPosition,tilePosition,true," ");
+                MakeFinalMove(selectedPosition,tilePosition," ");
             }
 
         } else if (getTile(tilePosition,board) == " ") {
@@ -216,6 +209,14 @@
             return "Error"
         }
     }
+
+    function offerdraw() {
+        fetch(APIadress+"draw",{method: "POST",headers: {"Content-type": "application/json; charset=UTF-8"}}).then((res) => {
+            if (res.status==200) {
+                updatemoveandboard();
+            }
+        });
+    }
 </script>
 
 <div style="display:grid;grid-template-columns: auto auto; gap:20px;">
@@ -225,10 +226,10 @@
                 {#if pawnPromoting}
                     <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
                         <div style="display:grid;grid-template-columns: auto auto auto auto; grid-template-rows: 1fr;padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"q");}}><img alt="" id="Queen" src={resetPiece(getSide(board)==1 ? 'Q' : 'q')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"n");}}><img alt="" id="Knight" src={resetPiece(getSide(board)==1 ? 'N' : 'n')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"b");}}><img alt="" id="Bishop" src={resetPiece(getSide(board)==1 ? 'B' : 'b')}></button>
-                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,true,"r");}}><img alt="" id="Rook" src={resetPiece(getSide(board)==1 ? 'R' : 'r')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,"q");}}><img alt="" id="Queen" src={resetPiece(getSide(board)==1 ? 'Q' : 'q')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,"n");}}><img alt="" id="Knight" src={resetPiece(getSide(board)==1 ? 'N' : 'n')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,"b");}}><img alt="" id="Bishop" src={resetPiece(getSide(board)==1 ? 'B' : 'b')}></button>
+                            <button style="padding: 0px; height: 70px;width: 70px;" onclick={() => {MakeFinalMove(SavedSelectedposition,SavedTileposition,"r");}}><img alt="" id="Rook" src={resetPiece(getSide(board)==1 ? 'R' : 'r')}></button>
                         </div>
                     </div>
                 {/if}
@@ -236,7 +237,7 @@
                     <div style="grid-column: 1 / -1;grid-row: 1 / -1;z-index: 2;align-items: center; justify-content: center;display:flex;">
                         <div style="padding:10px;background-color:dimgray;border-radius:20px;box-shadow: 3px 3px 1px rgb(0,0,0,0.25); text-align: center">
                             <p>{gameMessage()}</p>
-                            <button onclick={() => {resetBoard(board);gameResult = null;setAllLegalMoves(board);}}>Play Again</button>
+                            <button onclick={() => {resetBoard();gameResult = null;;}}>Play Again</button>
                         </div>
                     </div>
                 {/if}
@@ -256,9 +257,9 @@
             <div style="display: flex; gap: 20px; width: 480px;text-align: right;justify-content: space-between;">
                 <div><p style=" background: lightgray;padding: 5px;border-radius: 5px; box-shadow: 5px 5px 2px rgb(0,0,0,0.25);" in:fly= {{x:100, duration:2000, opacity:0,delay:2000}}>Turn: {board.turn} | {board.side == 1? "White" : "Black"} to move</p></div>
                 <div style="display:flex;"><button in:fly={{x:-25, duration:2000, opacity:0,delay:2000}} onclick={() => {boardFlipped = ! boardFlipped}}>Flip Board</button>
-                <button key={board.turn} style="background-color: {board.turn >= 40 ? 'lightgray' : 'dimgray'}" 
+                <button key={board.turn} style="background-color: {board.turn >= 20 ? 'lightgray' : 'dimgray'}" 
                     in:fly={{x:-25, duration:2000, opacity:0, delay:2000}} 
-                    onclick={() => {if (board.turn >= 40) {updateChessMovesList(board, {notation : "0.5-0.5"}); gameResult = 0.5;}}}>
+                    onclick={() => {if (board.turn >= 20) {offerdraw()}}}>
                     Offer Draw</button></div>
             </div>
         </div>

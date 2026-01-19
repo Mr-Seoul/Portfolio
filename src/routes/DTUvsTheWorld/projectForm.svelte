@@ -7,8 +7,6 @@
     <h1>Statement by Developer</h1>
     <h2>Vision</h2>
     <p>My goal with this project is to link a physical chessboard, which I will develop myself, to this website. Afterwards I'll place this chessboard somewhere on campus, thus allowing DTU students to play against people all over the world.</p>
-    <h2>To Do</h2>
-    <p>The website still needs a backend, and the physical chessboard still needs to be developed.</p>
     <h2>Credits</h2>
     <p>Special thanks to <a style="color:dimgray" target="_blank" href="https://petereo.com/">Pedro Diniz</a> for giving me programming advice.</p>
     <h2>Tech Stack</h2>
