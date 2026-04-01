@@ -1,78 +1,16 @@
 <script>
-    import Header from "./header.svelte"; 
-    import {fly} from "svelte/transition";
-    import { onMount } from "svelte";
-
-    let formState = $state({
-        answers: {},
-        step: 0,
-        error : ''
-    });
-
-    const QUESTIONS = [
-        {
-            question : "What is your name?",
-            id: "name",
-            type: "text"
-        },
-        {
-            question : "What is your birthday?",
-            id: "birthday",
-            type: "date"
-        },
-        {
-            question: "What is your favorite colour?",
-            id: "colour",
-            type: "color"
-        }
-    ];
-
-    function nextStep(id) {
-        if (formState.answers[id]) {
-                formState.step += 1;
-                formState.error = '';
-        } else {
-            formState.error = `${id} is empty, please fill ${id} out`;
-        }
-    }
-    //effect runs whenever any value mentioned in it updates
-    onMount (() => {
-        document.title = "Portfolio";
-        console.log("on mount");
-        console.log(formState.step)
-        return () => {
-            console.log("on unmount");
-        };
-    });
+    import { Img } from "flowbite-svelte";
 </script>
 
 <main>
-    <Header name={formState.answers.name}></Header>
-    
-    <p>Step: {formState.step}</p>
-    
-    {#if formState.error}
-            <p class="error">{formState.error}</p>
-    {/if}
-    
-    <!--{@render formStep(QUESTIONS[formState.step])}-->
-    {#each QUESTIONS as form, index}
-        {#if formState.step === index }
-            <div in:fly= {{x:200, duration: 200, opacity:0, delay:200}}
-                out:fly= {{x:-200, duration: 200, opacity:0}}> 
-                {@render formStep(form)}
-            </div>
-        {/if}
-    {/each}
-
-</main>
-
-{#snippet formStep({ question,id,type })}
-    <article>
-        <div>
-            <label for={id}>{question}</label>
-            <input type={type} id={id} bind:value={formState.answers[id]}>
+    <h1>Mark van Damme</h1>
+    <div class="container">
+        <Img src="../src/lib/img.png" height="200" width="200"  align={"left"}/>
+        <div class="text-content" width="400">
+            <h2>About Me</h2>
+            <p>Engineering Student at DTU. AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+            AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</p>
         </div>
-        <button onclick={() => nextStep(id)}>Next</button>
-    </article>
-{/snippet}
+    </div>
+</main>

@@ -23,12 +23,17 @@ button {
     margin: 2px;
 }
 
+body {
+    margin: 0;
+    padding: 0;
+}
+
 nav {
+    padding: 10px;
     background: linear-gradient(black, black) padding-box,
                 linear-gradient(1deg, dimgray, black) border-box;
 
     border: 5px solid transparent;
-    border-radius: 10px;
 
     display: flex;
     position: relative;
@@ -42,28 +47,11 @@ nav>button {
     margin: 3px;
 }
 
-#board {
-    background: #2F2F2F;
-    width: 480px;
-    height: 480px;
-    margin: 0 auto;
-    border-radius: 10px;
-    border: 10px solid #664229;
-    justify-self: center;
-
-    flex-wrap: wrap;
-    display: flex;
-    box-shadow: 10px 10px 5px rgba(0, 0, 0, 0.75);
-}
-
-#board>div {
-    height: 12.5%;
-    width: 12.5%;
-}
-
-#board>div>img {
-    height: 100%;
-    width: 100%;
-
-    filter: drop-shadow(3px 3px 1px rgba(0, 0, 0, 0.5));
-}
+ .container {
+     display: flex;       /* This puts children side-by-side */
+     align-items: center; /* Vertically aligns text with the middle of the image */
+     gap: 20px;           /* Creates space between image and text */
+     padding: 30px;
+     justify-content: center;
+     width: 700px;
+ }
